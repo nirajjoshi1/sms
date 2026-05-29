@@ -102,6 +102,17 @@ app.get("/health", (req, res) => {
     });
 });
 
+// Debug endpoint to see what routes are registered
+app.get("/api/v1/debug", (req, res) => {
+    res.json({
+        url: req.url,
+        originalUrl: req.originalUrl,
+        baseUrl: req.baseUrl,
+        path: req.path,
+        method: req.method
+    });
+});
+
 // API status endpoint
 app.get("/api/v1", (req, res) => {
     res.json({
