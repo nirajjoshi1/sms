@@ -1,22 +1,25 @@
 {
   "name": "school-management-system",
   "version": "1.0.0",
-  "description": "Gradex School Management System - Full Stack",
-  "main": "index.js",
+  "description": "Complete school management system with React and Node.js",
   "scripts": {
-    "install:server": "npm install --prefix server",
-    "install:client": "npm install --prefix client",
-    "install:all": "npm run install:server && npm run install:client",
-    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "server": "npm run dev --prefix server",
-    "client": "npm run dev --prefix client",
-    "build:client": "npm run build --prefix client",
-    "start": "concurrently \"npm start --prefix server\" \"npm run preview --prefix client\""
+    "install-client": "cd client && npm install",
+    "install-server": "cd server && npm install",
+    "install-all": "npm run install-client && npm run install-server",
+    "dev-client": "cd client && npm run dev",
+    "dev-server": "cd server && npm run dev",
+    "build-client": "cd client && npm run build",
+    "vercel-build": "npm run build-client && cd server && npm install"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^9.1.2"
-  }
+  "keywords": [
+    "school-management",
+    "education",
+    "erp",
+    "react",
+    "nodejs",
+    "express",
+    "prisma"
+  ],
+  "author": "Niraj Joshi",
+  "license": "MIT"
 }

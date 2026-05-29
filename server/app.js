@@ -150,4 +150,11 @@ app.use((req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
+// For Vercel serverless
+if (process.env.VERCEL) {
+    module.exports = app;
+} else {
+    module.exports = app;
+}
+
 module.exports = app;
