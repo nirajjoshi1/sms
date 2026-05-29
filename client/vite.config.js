@@ -29,10 +29,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'esbuild',
+    minify: true,
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: false,
     cssCodeSplit: true,
+    target: 'esnext',
   },
 
   preview: {
