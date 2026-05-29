@@ -30,23 +30,8 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild',
-
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'table-vendor': ['@tanstack/react-table'],
-          'chart-vendor': ['recharts'],
-        },
-      },
-    },
-
     chunkSizeWarningLimit: 1000,
-
-    reportCompressedSize: true,
-
+    reportCompressedSize: false,
     cssCodeSplit: true,
   },
 
