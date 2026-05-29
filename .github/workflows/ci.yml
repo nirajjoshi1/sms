@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+
+    - name: Install Backend Dependencies
+      working-directory: ./server
+      run: npm ci
+
+    - name: Lint Backend
+      working-directory: ./server
+      run: npm run lint --if-present
+
+    - name: Run Backend Tests
+      working-directory: ./server
+      run: npm test --if-present
+      env:
+        NODE_ENV: test
+        DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        JWT_SECRET: test_secret_key
+
+  test-frontend:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install Frontend Dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Lint Frontend
+      working-directory: ./client
+      run: npm run lint
+
+    - name: Build Frontend
+      working-directory: ./client
+      run: npm run build
+      env:
+        VITE_API_URL: http://localhost:5000/api/v1
+
+    - name: Run Frontend Tests
+      working-directory: ./client
+      run: npm test --if-present

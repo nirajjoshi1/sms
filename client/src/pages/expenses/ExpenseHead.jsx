@@ -1,0 +1,228 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, TrendingDown } from 'lucide-react';
+import api from '../../lib/api';
+import { toast } from 'sonner';
+import { getErrorMessage } from '../../lib/errorHandler';
+
+const ExpenseHead = () => {
+  const [expenseHeads, setExpenseHeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [formData, setFormData] = useState({ name: '', description: '' });
+
+  const fetchExpenseHeads = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/expenses/heads');
+      setExpenseHeads(response.data.data || []);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to fetch expense heads'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenseHeads();
+  }, []);
+
+  const openModal = (item = null) => {
+    if (item) {
+      setEditingItem(item);
+      setFormData({ name: item.name, description: item.description || '' });
+    } else {
+      setEditingItem(null);
+      setFormData({ name: '', description: '' });
+    }
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingItem(null);
+    setFormData({ name: '', description: '' });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return toast.error('Expense head name is required');
+
+    try {
+      setSubmitting(true);
+      if (editingItem) {
+        await api.put(`/expenses/heads/${editingItem.id}`, formData);
+        toast.success('Expense head updated successfully');
+      } else {
+        await api.post('/expenses/heads', formData);
+        toast.success('Expense head created successfully');
+      }
+      closeModal();
+      fetchExpenseHeads();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to save expense head'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense head?')) return;
+
+    try {
+      await api.delete(`/expenses/heads/${id}`);
+      toast.success('Expense head deleted successfully');
+      fetchExpenseHeads();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete expense head'));
+    }
+  };
+
+  return (
+    <div className="p-4 space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 border-b border-border pb-3">
+        <div>
+          <h1 className="text-lg font-black text-foreground tracking-tight">Expense Head Management</h1>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">Manage expense categories</p>
+        </div>
+        <button
+          onClick={() => openModal()}
+          className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold hover:opacity-90 transition-all flex items-center gap-2 w-fit"
+        >
+          <Plus className="w-3 h-3" />
+          Add Expense Head
+        </button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Loading...</span>
+            </div>
+          </div>
+        ) : expenseHeads.length === 0 ? (
+          <div className="p-12 text-center">
+            <TrendingDown className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">No expense heads found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/5 border-b border-border">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Expense Head Name</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Description</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Created At</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {expenseHeads.map((head) => (
+                  <tr key={head.id} className="hover:bg-muted/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-bold text-foreground">{head.name}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-muted-foreground">{head.description || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(head.createdAt).toLocaleDateString()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openModal(head)}
+                          className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(head.id)}
+                          className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
+                {editingItem ? 'Edit Expense Head' : 'Add Expense Head'}
+              </h3>
+              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
+                <Plus className="w-4 h-4 rotate-45" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                  Expense Head Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Enter expense head name"
+                  className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter description (optional)"
+                  rows="3"
+                  className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 h-9 bg-muted text-foreground rounded-lg text-[10px] font-bold hover:bg-muted/80"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 h-9 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold hover:opacity-90 disabled:opacity-50"
+                >
+                  {submitting ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ExpenseHead;

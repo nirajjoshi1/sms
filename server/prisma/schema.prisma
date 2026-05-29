@@ -1,0 +1,720 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AcademicSession {
+  id        String   @id @default(uuid())
+  name      String
+  isCurrent Boolean  @default(false)
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Student   Student[]
+}
+
+model CertificateTemplate {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  headerLeftText   String?
+  headerCenterText String?
+  headerRightText  String?
+  bodyText         String
+  footerLeftText   String?
+  footerCenterText String?
+  footerRightText  String?
+  backgroundImage  String?
+  headerHeight     String?
+  footerHeight     String?
+  bodyHeight       String?
+  bodyWidth        String?
+  studentPhoto     Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Class {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  ClassTeacher ClassTeacher[]
+  Student      Student[]
+  SubjectGroup SubjectGroup[]
+  Timetable    Timetable[]
+  Section      Section[]
+}
+
+model ClassTeacher {
+  id        String   @id @default(uuid())
+  classId   String
+  sectionId String
+  staffId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Class     Class    @relation(fields: [classId], references: [id])
+  Section   Section  @relation(fields: [sectionId], references: [id])
+  Staff     Staff    @relation(fields: [staffId], references: [id])
+
+  @@unique([classId, sectionId, staffId])
+}
+
+model CmsPage {
+  id        String   @id @default(uuid())
+  title     String   @unique
+  slug      String   @unique
+  pageType  String   @default("Standard")
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Staff     Staff[]
+}
+
+model Designation {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Staff     Staff[]
+}
+
+model DisableReason {
+  id        String    @id @default(uuid())
+  reason    String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Student   Student[]
+}
+
+model Expense {
+  id            String      @id @default(uuid())
+  name          String
+  invoiceNumber String?
+  date          DateTime
+  amount        Float
+  documentUrl   String?
+  description   String?
+  expenseHeadId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  ExpenseHead   ExpenseHead @relation(fields: [expenseHeadId], references: [id])
+}
+
+model ExpenseHead {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Expense     Expense[]
+}
+
+model FeeDiscount {
+  id           String    @id @default(uuid())
+  name         String
+  code         String    @unique
+  discountType String
+  percentage   Float?
+  amount       Float?
+  usageLimit   Int?
+  expiryDate   DateTime?
+  description  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model FeeGroup {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  FeeMaster   FeeMaster[]
+  FeePayment  FeePayment[]
+}
+
+model FeeMaster {
+  id         String    @id @default(uuid())
+  dueDate    DateTime?
+  amount     Float
+  fineType   String    @default("None")
+  percentage Float?
+  fixAmount  Float?
+  feeGroupId String
+  feeTypeId  String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  FeeGroup   FeeGroup  @relation(fields: [feeGroupId], references: [id])
+  FeeType    FeeType   @relation(fields: [feeTypeId], references: [id])
+}
+
+model FeeReminder {
+  id           String   @id @default(uuid())
+  isActive     Boolean  @default(false)
+  reminderType String
+  days         Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FeePayment {
+  id             String   @id @default(uuid())
+  receiptNumber  String   @unique
+  paymentDate    DateTime
+  amount         Float
+  discountAmount Float    @default(0)
+  fineAmount     Float    @default(0)
+  netAmount      Float
+  paymentMethod  String
+  remarks        String?
+  studentId      String
+  feeGroupId     String
+  feeTypeId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  Student        Student  @relation(fields: [studentId], references: [id])
+  FeeGroup       FeeGroup @relation(fields: [feeGroupId], references: [id])
+  FeeType        FeeType  @relation(fields: [feeTypeId], references: [id])
+}
+
+model FeeType {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  code        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  FeeMaster   FeeMaster[]
+  FeePayment  FeePayment[]
+}
+
+model House {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Student     Student[]
+}
+
+model IdCardTemplate {
+  id                String   @id @default(uuid())
+  title             String   @unique
+  schoolName        String
+  schoolAddress     String?
+  headerColor       String?
+  templateFor       String   @default("STUDENT")
+  designType        String   @default("Horizontal")
+  backgroundImage   String?
+  logo              String?
+  signature         String?
+  showAdmissionNo   Boolean  @default(true)
+  showStudentName   Boolean  @default(true)
+  showClass         Boolean  @default(true)
+  showFatherName    Boolean  @default(false)
+  showMotherName    Boolean  @default(false)
+  showAddress       Boolean  @default(false)
+  showPhone         Boolean  @default(false)
+  showDob           Boolean  @default(false)
+  showBloodGroup    Boolean  @default(false)
+  showBarcode       Boolean  @default(false)
+  showRollNo        Boolean  @default(false)
+  showHouse         Boolean  @default(false)
+  showStaffId       Boolean  @default(false)
+  showDesignation   Boolean  @default(false)
+  showDepartment    Boolean  @default(false)
+  showDateOfJoining Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Income {
+  id            String     @id @default(uuid())
+  name          String
+  invoiceNumber String?
+  date          DateTime
+  amount        Float
+  documentUrl   String?
+  description   String?
+  incomeHeadId  String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  IncomeHead    IncomeHead @relation(fields: [incomeHeadId], references: [id])
+}
+
+model IncomeHead {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Income      Income[]
+}
+
+model LeaveRequest {
+  id          String    @id @default(uuid())
+  applyDate   DateTime
+  fromDate    DateTime
+  toDate      DateTime
+  isHalfDay   Boolean   @default(false)
+  halfDayType String?
+  reason      String?
+  note        String?
+  documentUrl String?
+  status      String    @default("Pending")
+  leaveTypeId String
+  staffId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  LeaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+  Staff       Staff     @relation(fields: [staffId], references: [id])
+}
+
+model LeaveType {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  LeaveRequest LeaveRequest[]
+}
+
+model MediaFile {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileUrl   String
+  fileType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  eventDate   DateTime
+  location    String?
+  imageUrls   String[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Gallery {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrls   String[]
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model News {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  author      String?
+  imageUrls   String[]
+  publishDate DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Menu {
+  id        String   @id @default(uuid())
+  title     String
+  url       String
+  parentId  String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Parent    Menu?    @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  Children  Menu[]   @relation("MenuHierarchy")
+}
+
+model BannerImage {
+  id        String   @id @default(uuid())
+  title     String
+  imageUrls String[]
+  linkUrl   String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OfflineBankPayment {
+  id          String    @id @default(uuid())
+  requestId   String    @unique
+  paymentDate DateTime
+  submitDate  DateTime
+  amount      Float
+  status      String    @default("Pending")
+  statusDate  DateTime?
+  paymentId   String?
+  studentId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Student     Student   @relation(fields: [studentId], references: [id])
+}
+
+model Payroll {
+  id        String   @id @default(uuid())
+  month     String
+  year      Int
+  status    String   @default("Generated")
+  netSalary Float?
+  staffId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Staff     Staff    @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, month, year])
+}
+
+model School {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  email     String?  @unique
+  logo      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
+}
+
+model Section {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  ClassTeacher ClassTeacher[]
+  Student      Student[]
+  SubjectGroup SubjectGroup[]
+  Timetable    Timetable[]
+  Class        Class[]
+}
+
+model Staff {
+  id               String            @id @default(uuid())
+  staffId          String            @unique // Auto-generated
+  firstName        String
+  middleName       String?
+  lastName         String?
+  gender           String
+  dob              DateTime
+  phone            String?
+  email            String?
+  photo            String? // Cloudinary URL
+  dateOfJoining    DateTime?
+  qualification    String?
+  experience       String?
+  address          String?
+  emergencyContact String?
+  bloodGroup       String?
+  maritalStatus    String?
+  role             Role
+  departmentId     String?
+  designationId    String?
+  isDisabled       Boolean           @default(false)
+  disableReason    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  ClassTeacher     ClassTeacher[]
+  LeaveRequest     LeaveRequest[]
+  Payroll          Payroll[]
+  Department       Department?       @relation(fields: [departmentId], references: [id])
+  Designation      Designation?      @relation(fields: [designationId], references: [id])
+  StaffAttendance  StaffAttendance[]
+  TeacherRating    TeacherRating[]
+  Timetable        Timetable[]
+}
+
+model StaffAttendance {
+  id        String   @id @default(uuid())
+  date      DateTime
+  status    String
+  note      String?
+  staffId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Staff     Staff    @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, date])
+}
+
+model Student {
+  id                 String               @id @default(uuid())
+  admissionNo        String               @unique
+  rollNumber         String?
+  enrollNumber       String?
+  firstName          String
+  middleName         String?
+  lastName           String?
+  gender             String
+  dob                DateTime
+  mobileNumber       String?
+  email              String?
+  admissionDate      DateTime?
+  photo              String?
+  classId            String
+  sectionId          String
+  categoryId         String?
+  houseId            String?
+  fatherName         String?
+  fatherPhone        String?
+  motherName         String?
+  motherPhone        String?
+  guardianIs         String?
+  guardianName       String
+  guardianRelation   String?
+  guardianPhone      String
+  guardianAddress    String?
+  isDisabled         Boolean              @default(false)
+  disableReasonId    String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  birthCertificate   String?
+  OfflineBankPayment OfflineBankPayment[]
+  FeePayment         FeePayment[]
+  Category           Category?            @relation(fields: [categoryId], references: [id])
+  Class              Class                @relation(fields: [classId], references: [id])
+  DisableReason      DisableReason?       @relation(fields: [disableReasonId], references: [id])
+  House              House?               @relation(fields: [houseId], references: [id])
+  Section            Section              @relation(fields: [sectionId], references: [id])
+  TeacherRating      TeacherRating[]
+}
+
+model Subject {
+  id           String         @id @default(uuid())
+  name         String
+  type         String
+  code         String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Timetable    Timetable[]
+  SubjectGroup SubjectGroup[]
+}
+
+model SubjectGroup {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  classId     String
+  sectionId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Class       Class     @relation(fields: [classId], references: [id])
+  Section     Section   @relation(fields: [sectionId], references: [id])
+  Subject     Subject[]
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeacherRating {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  status    String   @default("Active")
+  staffId   String
+  studentId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Staff     Staff    @relation(fields: [staffId], references: [id])
+  Student   Student  @relation(fields: [studentId], references: [id])
+}
+
+model Timetable {
+  id        String   @id @default(uuid())
+  dayOfWeek String
+  startTime String
+  endTime   String
+  roomNo    String?
+  classId   String
+  sectionId String
+  subjectId String
+  staffId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Class     Class    @relation(fields: [classId], references: [id])
+  Section   Section  @relation(fields: [sectionId], references: [id])
+  Staff     Staff    @relation(fields: [staffId], references: [id])
+  Subject   Subject  @relation(fields: [subjectId], references: [id])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(TEACHER)
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  schoolId  String?
+  School    School?  @relation(fields: [schoolId], references: [id])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  ACCOUNTANT
+  LIBRARIAN
+  RECEPTIONIST
+}
+
+model GeneralSetting {
+  id             String   @id @default(uuid())
+  schoolName     String?
+  schoolCode     String?
+  address        String?
+  city           String?
+  state          String?
+  country        String?
+  pincode        String?
+  phone          String?
+  email          String?
+  website        String?
+  logo           String?
+  favicon        String?
+  currency       String   @default("USD")
+  currencySymbol String   @default("$")
+  dateFormat     String   @default("DD/MM/YYYY")
+  timeFormat     String   @default("12")
+  timezone       String   @default("UTC")
+  language       String   @default("en")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model NotificationSetting {
+  id                     String   @id @default(uuid())
+  emailNotifications     Boolean  @default(true)
+  smsNotifications       Boolean  @default(false)
+  pushNotifications      Boolean  @default(true)
+  admissionNotification  Boolean  @default(true)
+  feePaymentNotification Boolean  @default(true)
+  attendanceNotification Boolean  @default(true)
+  examResultNotification Boolean  @default(true)
+  homeworkNotification   Boolean  @default(true)
+  leaveNotification      Boolean  @default(true)
+  birthdayNotification   Boolean  @default(false)
+  eventNotification      Boolean  @default(true)
+  newsNotification       Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model SmsSetting {
+  id                String   @id @default(uuid())
+  provider          String   @default("twilio")
+  twilioAccountSid  String?
+  twilioAuthToken   String?
+  twilioPhoneNumber String?
+  nexmoApiKey       String?
+  nexmoApiSecret    String?
+  nexmoPhoneNumber  String?
+  msg91AuthKey      String?
+  msg91SenderId     String?
+  isEnabled         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model EmailSetting {
+  id             String   @id @default(uuid())
+  mailDriver     String   @default("smtp")
+  smtpHost       String?
+  smtpPort       String   @default("587")
+  smtpUsername   String?
+  smtpPassword   String?
+  smtpEncryption String   @default("tls")
+  fromEmail      String?
+  fromName       String?
+  isEnabled      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PaymentSetting {
+  id                   String   @id @default(uuid())
+  cashEnabled          Boolean  @default(true)
+  stripeEnabled        Boolean  @default(false)
+  stripePublishableKey String?
+  stripeSecretKey      String?
+  paypalEnabled        Boolean  @default(false)
+  paypalClientId       String?
+  paypalSecret         String?
+  paypalMode           String   @default("sandbox")
+  razorpayEnabled      Boolean  @default(false)
+  razorpayKeyId        String?
+  razorpayKeySecret    String?
+  bankTransferEnabled  Boolean  @default(true)
+  bankName             String?
+  accountNumber        String?
+  accountName          String?
+  ifscCode             String?
+  branchName           String?
+  chequeEnabled        Boolean  @default(true)
+  chequePayableTo      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model PrintSetting {
+  id                String   @id @default(uuid())
+  headerText        String?
+  headerLeftLogo    String?
+  headerRightLogo   String?
+  footerText        String?
+  showHeader        Boolean  @default(true)
+  showFooter        Boolean  @default(true)
+  showSchoolName    Boolean  @default(true)
+  showSchoolAddress Boolean  @default(true)
+  showSchoolPhone   Boolean  @default(true)
+  showSchoolEmail   Boolean  @default(true)
+  showSchoolWebsite Boolean  @default(true)
+  showPageNumber    Boolean  @default(true)
+  showDate          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Backup {
+  id        String   @id @default(uuid())
+  filename  String
+  filePath  String
+  fileSize  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
