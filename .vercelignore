@@ -3,5 +3,23 @@ node_modules
 .env.local
 *.log
 .DS_Store
-client/node_modules
-server/node_modules
+
+# Exclude server dev dependencies
+server/node_modules/.cache
+server/prisma/migrations
+server/prisma/*.db
+server/dist
+server/coverage
+server/test
+
+# Documentation (except README)
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
