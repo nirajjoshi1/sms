@@ -4,7 +4,17 @@
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.js": {
-      "includeFiles": "server/**",
+      "includeFiles": [
+        "server/app.js",
+        "server/src/**",
+        "server/prisma/schema.prisma"
+      ],
+      "excludeFiles": [
+        "server/node_modules/**",
+        "server/prisma/seed.js",
+        "server/test-*.js",
+        "server/.env*"
+      ],
       "maxDuration": 30
     }
   },
