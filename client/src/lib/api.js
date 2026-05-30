@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.PROD
+  ? '/api/v1'
+  : import.meta.env.VITE_API_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL,
   withCredentials: true, // send cookies automatically
 });
 
