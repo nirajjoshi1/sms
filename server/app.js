@@ -31,9 +31,12 @@ const app = express();
 app.set("trust proxy", 1);
 
 // Security: CORS configuration with production whitelist
-const allowedOrigins = process.env.CLIENT_URL
-    ? process.env.CLIENT_URL.split(",").map(origin => origin.trim())
-    : ["http://localhost:5173"];
+const allowedOrigins = [
+    ...(process.env.CLIENT_URL
+        ? process.env.CLIENT_URL.split(",").map(origin => origin.trim())
+        : ["http://localhost:5173"]),
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])
+].filter(Boolean);
 
 app.use(cors({
     origin: function (origin, callback) {

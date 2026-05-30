@@ -8,8 +8,11 @@
     "install-all": "npm run install-client && npm run install-server",
     "dev-client": "cd client && npm run dev",
     "dev-server": "cd server && npm run dev",
-    "build": "cd client && npm install && npm run build",
-    "vercel-build": "cd client && npm install && npm run build && cd ../server && npm install"
+    "build": "npm --prefix client run build",
+    "vercel-build": "npm --prefix client install && npm --prefix server install && npm --prefix client run build"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [
     "school-management",

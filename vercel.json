@@ -1,25 +1,25 @@
 {
-  "installCommand": "npm install --prefix client && npm install --prefix server",
-  "buildCommand": "npm run build --prefix client",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "client/dist",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "server/**",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
     },
     {
       "source": "/health",
-      "destination": "/api/index"
+      "destination": "/api/index.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10,
-      "includeFiles": "server/{src,prisma,app.js,package.json}/**"
-    }
-  }
+  ]
 }

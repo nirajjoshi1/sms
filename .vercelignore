@@ -1,25 +1,19 @@
-node_modules
-.env
-.env.local
-*.log
-.DS_Store
-
-# Exclude server dev dependencies
-server/node_modules/.cache
-server/prisma/migrations
-server/prisma/*.db
-server/dist
-server/coverage
-server/test
-
-# Documentation (except README)
-*.md
-!README.md
-
-# Git
 .git
-.gitignore
+.github
+.claude
+client/.claude
 
-# IDE
-.vscode
-.idea
+node_modules
+client/node_modules
+server/node_modules
+
+client/dist
+
+.env
+.env.*
+!.env.example
+
+*.log
+npm-debug.log*
+server/uploads
+server/public/uploads
