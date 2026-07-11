@@ -74,6 +74,13 @@ exports.requireSchoolContext = (req, res, next) => {
     // Auto-inject schoolId into body/query if not present, to ensure controllers use the correct scope
     if (req.user.schoolId) {
         if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+            // For multipart/form-data requests (such as image uploads), multer has
+            // not populated req.body yet when this middleware runs.
+            // Only inspect/inject tenant data when a parsed request body exists.
+            if (!req.body || typeof req.body !== 'object') {
+                return next();
+            }
+
             // Prevent users from injecting a different schoolId
             if (req.body.schoolId && req.body.schoolId !== req.user.schoolId) {
                 throw new ApiError(403, "Access denied - Cannot operate on another tenant's resources");
