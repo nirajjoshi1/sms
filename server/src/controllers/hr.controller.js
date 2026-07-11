@@ -4,6 +4,19 @@ const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
 
+const getStaffForUser = async (userId) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { Staff: true }
+    });
+    if (!user) throw new ApiError(401, 'User account not found');
+    if (user?.Staff) return user.Staff;
+
+    const staff = await prisma.staff.findFirst({ where: { email: user.email } });
+    if (!staff) throw new ApiError(404, 'No Staff record linked to this account.');
+    return staff;
+};
+
 // =====================================
 // Staff Controllers
 // =====================================
@@ -220,7 +233,12 @@ exports.createLeaveType = asyncHandler(async (req, res) => {
 });
 
 exports.getLeaveRequests = asyncHandler(async (req, res) => {
-    const { staffId, status } = req.query;
+    let { staffId, status } = req.query;
+
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'ADMIN') {
+        const myStaff = await getStaffForUser(req.user.id);
+        staffId = myStaff.id;
+    }
 
     const leaves = await prisma.leaveRequest.findMany({
         where: {
@@ -237,7 +255,12 @@ exports.getLeaveRequests = asyncHandler(async (req, res) => {
 });
 
 exports.createLeaveRequest = asyncHandler(async (req, res) => {
-    const { staffId, fromDate, toDate, leaveTypeId, reason, isHalfDay, halfDayType, documentUrl } = req.body;
+    let { staffId, fromDate, toDate, leaveTypeId, reason, isHalfDay, halfDayType, documentUrl } = req.body;
+
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'ADMIN') {
+        const myStaff = await getStaffForUser(req.user.id);
+        staffId = myStaff.id;
+    }
 
     // Validate dates
     const from = new Date(fromDate);
@@ -314,6 +337,16 @@ exports.updateLeaveStatus = asyncHandler(async (req, res) => {
 
 exports.deleteLeaveRequest = asyncHandler(async (req, res) => {
     const { id } = req.params;
+
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'ADMIN') {
+        const myStaff = await getStaffForUser(req.user.id);
+        const leave = await prisma.leaveRequest.findUnique({ where: { id } });
+        if (!leave) throw new ApiError(404, "Leave request not found");
+        if (leave.staffId !== myStaff.id) {
+            throw new ApiError(403, "You can only delete your own leave requests");
+        }
+    }
+
     await prisma.leaveRequest.delete({ where: { id } });
     res.status(200).json(new ApiResponse(200, null, "Leave request deleted successfully"));
 });

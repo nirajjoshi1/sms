@@ -30,7 +30,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 3000,
     reportCompressedSize: false,
     cssCodeSplit: true,
     target: 'esnext',

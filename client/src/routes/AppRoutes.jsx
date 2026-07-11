@@ -140,92 +140,112 @@ const AppRoutes = () => {
         <Route index element={isAuthenticated ? <Dashboard /> : null} />
 
         {/* Student Routes */}
-        <Route path="students" element={<StudentList />} />
-        <Route path="students/:id" element={<StudentProfile />} />
-        <Route path="students/admission" element={<StudentAdmission />} />
-        <Route path="students/edit/:id" element={<StudentEdit />} />
-        <Route path="students/disabled" element={<DisabledStudents />} />
-        <Route path="students/category" element={<Category />} />
-        <Route path="students/house" element={<House />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST']} />}>
+          <Route path="students" element={<StudentList />} />
+          <Route path="students/:id" element={<StudentProfile />} />
+          <Route path="students/admission" element={<StudentAdmission />} />
+          <Route path="students/edit/:id" element={<StudentEdit />} />
+          <Route path="students/disabled" element={<DisabledStudents />} />
+          <Route path="students/category" element={<Category />} />
+          <Route path="students/house" element={<House />} />
+        </Route>
 
         {/* Staff Routes */}
-        <Route path="staff" element={<StaffList />} />
-        <Route path="staff/add" element={<StaffAdd />} />
-        <Route path="staff/edit/:id" element={<StaffEdit />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+          <Route path="staff" element={<StaffList />} />
+          <Route path="staff/add" element={<StaffAdd />} />
+          <Route path="staff/edit/:id" element={<StaffEdit />} />
+        </Route>
 
         {/* Academics Routes */}
-        <Route path="academics/class" element={<Classes />} />
-        <Route path="academics/sections" element={<Sections />} />
-        <Route path="academics/subjects" element={<Subjects />} />
-        <Route path="academics/subject-group" element={<SubjectGroup />} />
-        <Route path="academics/assign-teacher" element={<AssignClassTeacher />} />
-        <Route path="academics/timetable/class" element={<ClassTimetable />} />
-        <Route path="academics/timetable/teacher" element={<TeachersTimetable />} />
-        <Route path="academics/promote" element={<PromoteStudents />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+          <Route path="academics/class" element={<Classes />} />
+          <Route path="academics/sections" element={<Sections />} />
+          <Route path="academics/subjects" element={<Subjects />} />
+          <Route path="academics/subject-group" element={<SubjectGroup />} />
+          <Route path="academics/assign-teacher" element={<AssignClassTeacher />} />
+          <Route path="academics/timetable/class" element={<ClassTimetable />} />
+          <Route path="academics/timetable/teacher" element={<TeachersTimetable />} />
+          <Route path="academics/promote" element={<PromoteStudents />} />
+        </Route>
 
         {/* HR Routes */}
-        <Route path="hr/staff-directory" element={<StaffDirectory />} />
-        <Route path="hr/disabled-staff" element={<DisabledStaff />} />
-        <Route path="hr/attendance" element={<StaffAttendance />} />
-        <Route path="hr/payroll" element={<Payroll />} />
-        <Route path="hr/apply-leave" element={<ApplyLeave />} />
-        <Route path="hr/approve-leave" element={<ApproveLeave />} />
-        <Route path="hr/leave-type" element={<LeaveType />} />
-        <Route path="hr/teachers-rating" element={<TeachersRating />} />
-        <Route path="hr/department" element={<Department />} />
-        <Route path="hr/designation" element={<Designation />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+          <Route path="hr/staff-directory" element={<StaffDirectory />} />
+          <Route path="hr/disabled-staff" element={<DisabledStaff />} />
+          <Route path="hr/attendance" element={<StaffAttendance />} />
+          <Route path="hr/payroll" element={<Payroll />} />
+          <Route path="hr/apply-leave" element={<ApplyLeave />} />
+          <Route path="hr/approve-leave" element={<ApproveLeave />} />
+          <Route path="hr/leave-type" element={<LeaveType />} />
+          <Route path="hr/teachers-rating" element={<TeachersRating />} />
+          <Route path="hr/department" element={<Department />} />
+          <Route path="hr/designation" element={<Designation />} />
+        </Route>
 
         {/* Fees Routes */}
-        <Route path="fees/collect" element={<CollectFees />} />
-        <Route path="fees/search" element={<SearchFees />} />
-        <Route path="fees/due" element={<DueFees />} />
-        <Route path="fees/master" element={<FeesMaster />} />
-        <Route path="fees/group" element={<FeesGroup />} />
-        <Route path="fees/type" element={<FeesType />} />
-        <Route path="fees/discount" element={<FeesDiscount />} />
-        <Route path="fees/carry-forward" element={<FeesCarryForward />} />
-        <Route path="fees/reminder" element={<FeesReminder />} />
-        <Route path="fees/offline-payment" element={<OfflineBankPayment />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']} />}>
+          <Route path="fees/collect" element={<CollectFees />} />
+          <Route path="fees/search" element={<SearchFees />} />
+          <Route path="fees/due" element={<DueFees />} />
+          <Route path="fees/master" element={<FeesMaster />} />
+          <Route path="fees/group" element={<FeesGroup />} />
+          <Route path="fees/type" element={<FeesType />} />
+          <Route path="fees/discount" element={<FeesDiscount />} />
+          <Route path="fees/carry-forward" element={<FeesCarryForward />} />
+          <Route path="fees/reminder" element={<FeesReminder />} />
+          <Route path="fees/offline-payment" element={<OfflineBankPayment />} />
+        </Route>
 
         {/* Income Routes */}
-        <Route path="income/head" element={<IncomeHead />} />
-        <Route path="income/add" element={<AddIncome />} />
-        <Route path="income/edit/:id" element={<AddIncome />} />
-        <Route path="income/search" element={<SearchIncome />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+          <Route path="income/head" element={<IncomeHead />} />
+          <Route path="income/add" element={<AddIncome />} />
+          <Route path="income/edit/:id" element={<AddIncome />} />
+          <Route path="income/search" element={<SearchIncome />} />
+        </Route>
 
         {/* Expense Routes */}
-        <Route path="expenses/head" element={<ExpenseHead />} />
-        <Route path="expenses/add" element={<AddExpense />} />
-        <Route path="expenses/edit/:id" element={<AddExpense />} />
-        <Route path="expenses/search" element={<SearchExpense />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+          <Route path="expenses/head" element={<ExpenseHead />} />
+          <Route path="expenses/add" element={<AddExpense />} />
+          <Route path="expenses/edit/:id" element={<AddExpense />} />
+          <Route path="expenses/search" element={<SearchExpense />} />
+        </Route>
 
         {/* Certificate Routes */}
-        <Route path="certificates/student-certificate" element={<StudentCertificate />} />
-        <Route path="certificates/generate-certificate" element={<GenerateCertificate />} />
-        <Route path="certificates/transfer-certificate" element={<TransferCertificate />} />
-        <Route path="certificates/student-id-card" element={<StudentIDCard />} />
-        <Route path="certificates/generate-id-card" element={<GenerateIDCard />} />
-        <Route path="certificates/staff-id-card" element={<StaffIDCard />} />
-        <Route path="certificates/generate-staff-id-card" element={<GenerateStaffIDCard />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+          <Route path="certificates/student-certificate" element={<StudentCertificate />} />
+          <Route path="certificates/generate-certificate" element={<GenerateCertificate />} />
+          <Route path="certificates/transfer-certificate" element={<TransferCertificate />} />
+          <Route path="certificates/student-id-card" element={<StudentIDCard />} />
+          <Route path="certificates/generate-id-card" element={<GenerateIDCard />} />
+          <Route path="certificates/staff-id-card" element={<StaffIDCard />} />
+          <Route path="certificates/generate-staff-id-card" element={<GenerateStaffIDCard />} />
+        </Route>
 
         {/* CMS Routes */}
-        <Route path="cms/event" element={<Events />} />
-        <Route path="cms/gallery" element={<Gallery />} />
-        <Route path="cms/news" element={<News />} />
-        <Route path="cms/media" element={<MediaManager />} />
-        <Route path="cms/pages" element={<Pages />} />
-        <Route path="cms/menus" element={<Menus />} />
-        <Route path="cms/banners" element={<BannerImages />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+          <Route path="cms/event" element={<Events />} />
+          <Route path="cms/gallery" element={<Gallery />} />
+          <Route path="cms/news" element={<News />} />
+          <Route path="cms/media" element={<MediaManager />} />
+          <Route path="cms/pages" element={<Pages />} />
+          <Route path="cms/menus" element={<Menus />} />
+          <Route path="cms/banners" element={<BannerImages />} />
+        </Route>
 
         {/* Settings Routes */}
-        <Route path="settings/general" element={<GeneralSetting />} />
-        <Route path="settings/session" element={<SessionSetting />} />
-        <Route path="settings/notification" element={<NotificationSetting />} />
-        <Route path="settings/sms" element={<SmsSetting />} />
-        <Route path="settings/email" element={<EmailSetting />} />
-        <Route path="settings/payment" element={<PaymentSetting />} />
-        <Route path="settings/print" element={<PrintSetting />} />
-        <Route path="settings/backup" element={<BackupSetting />} />
+        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+          <Route path="settings/general" element={<GeneralSetting />} />
+          <Route path="settings/session" element={<SessionSetting />} />
+          <Route path="settings/notification" element={<NotificationSetting />} />
+          <Route path="settings/sms" element={<SmsSetting />} />
+          <Route path="settings/email" element={<EmailSetting />} />
+          <Route path="settings/payment" element={<PaymentSetting />} />
+          <Route path="settings/print" element={<PrintSetting />} />
+          <Route path="settings/backup" element={<BackupSetting />} />
+        </Route>
 
         {/* Teacher Portal Routes */}
         <Route path="teacher/dashboard" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherDashboard /></ProtectedRoute>} />

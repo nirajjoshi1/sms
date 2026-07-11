@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settings.controller');
-const { authorizeRoles } = require('../middleware/auth.middleware');
+const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+
+// All routes require school context (except Super Admin)
+router.use(requireSchoolContext);
 
 // General settings routes
 router.route('/general')
@@ -64,9 +67,9 @@ router.route('/backups/:id')
 router.get('/backups/:id/download', authorizeRoles('SUPER_ADMIN', 'ADMIN'), settingsController.downloadBackup);
 router.post('/backups/:id/restore', authorizeRoles('SUPER_ADMIN'), settingsController.restoreBackup);
 
-// Legacy routes (keep for backwards compatibility)
+// Legacy routes (keep for backwards compatibility but secure them)
 router.route('/')
-    .get(settingsController.getSettings)
-    .post(settingsController.updateSetting);
+    .get(authorizeRoles('SUPER_ADMIN', 'ADMIN'), settingsController.getSettings)
+    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), settingsController.updateSetting);
 
 module.exports = router;

@@ -50,7 +50,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Student Information",
     icon: <UserSquare2 />,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "RECEPTIONIST"],
     items: [
       { label: 'Student Details', to: '/students' },
       { label: 'Student Admission', to: '/students/admission' },
@@ -64,7 +64,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Fees Collection",
     icon: <Wallet />,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "ACCOUNTANT", "RECEPTIONIST"],
     items: [
       { label: 'Collect Fees', to: '/fees/collect' },
       { label: 'Search Fees Payment', to: '/fees/search' },
@@ -80,7 +80,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Income",
     icon: <DollarSign />,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "ACCOUNTANT"],
     items: [
       { label: 'Add Income', to: '/income/add' },
       { label: 'Search Income', to: '/income/search' },
@@ -90,7 +90,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Expenses",
     icon: <Receipt />,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "ACCOUNTANT"],
     items: [
       { label: 'Add Expense', to: '/expenses/add' },
       { label: 'Search Expense', to: '/expenses/search' },
@@ -115,7 +115,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Human Resource",
     icon: <Users2 />,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "ACCOUNTANT"],
     items: [
       { label: 'Staff Directory', to: '/hr/staff-directory' },
       { label: 'Add Staff', to: '/staff/add' },

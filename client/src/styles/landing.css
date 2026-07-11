@@ -1,0 +1,312 @@
+/* ══════════════════════════════════════════════════════════════════
+   Gradex SaaS — Scoped CSS Design System
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ── Tokens ── */
+:root {
+  --indigo:   #6366f1;
+  --violet:   #8b5cf6;
+  --pink:     #ec4899;
+  --bg:       #000;
+  --surface:  rgba(255,255,255,0.025);
+  --border:   rgba(255,255,255,0.08);
+  --text-muted: rgba(255,255,255,0.45);
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Scope everything under .landing-page-root to avoid bleeding into other parts of the app */
+.landing-page-root {
+  background: #000;
+  color: #fff;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Reset margin/padding only within the landing page container */
+  &, & *, & *::before, & *::after {
+    box-sizing: border-box;
+  }
+  
+  h1, h2, h3, h4, h5, h6, p, ul, ol, li, figure, figcaption, blockquote, dl, dd {
+    margin: 0;
+    padding: 0;
+  }
+  
+  ul, ol {
+    list-style: none;
+  }
+
+  button, a, input[type="submit"], input[type="range"], select {
+    cursor: pointer !important;
+  }
+
+  /* ── Font helpers ── */
+  .font-heading { font-family: 'Instrument Serif', serif; }
+  .font-body    { font-family: 'Barlow', sans-serif; }
+  .font-ui      { font-family: 'Space Grotesk', sans-serif; }
+
+  /* ── Liquid Glass Primary (subtle) ── */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    backdrop-filter: blur(4px) saturate(180%);
+    -webkit-backdrop-filter: blur(4px) saturate(180%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.10);
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      180deg,
+      rgba(255,255,255,0.45) 0%,
+      rgba(255,255,255,0.15) 20%,
+      rgba(255,255,255,0.00) 40%,
+      rgba(255,255,255,0.00) 60%,
+      rgba(255,255,255,0.15) 80%,
+      rgba(255,255,255,0.45) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── Liquid Glass Strong (bolder, higher blur) ── */
+  .liquid-glass-strong {
+    background: rgba(255, 255, 255, 0.04);
+    background-blend-mode: luminosity;
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 4px 4px 16px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.15);
+  }
+
+  .liquid-glass-strong::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      160deg,
+      rgba(255,255,255,0.5) 0%,
+      rgba(255,255,255,0.2) 25%,
+      rgba(255,255,255,0.0) 50%,
+      rgba(255,255,255,0.2) 75%,
+      rgba(255,255,255,0.5) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── Liquid Glass Indigo (accent variant) ── */
+  .liquid-glass-indigo {
+    background: rgba(99, 102, 241, 0.08);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 1px rgba(99,102,241,0.25), 0 0 40px rgba(99,102,241,0.12);
+  }
+  .liquid-glass-indigo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      135deg,
+      rgba(99,102,241,0.6) 0%,
+      rgba(139,92,246,0.3) 40%,
+      rgba(236,72,153,0.2) 70%,
+      rgba(99,102,241,0.5) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── Gradient Helpers ── */
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1 0%, #a78bfa 45%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-text-warm {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Typography ── */
+  .heading-display {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .heading-xl {
+    font-size: clamp(3.5rem, 9vw, 8rem);
+  }
+  .heading-lg {
+    font-size: clamp(2.8rem, 6vw, 5.5rem);
+  }
+  .heading-md {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  /* ── Nav Pill ── */
+  .nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 9999px;
+  }
+  .nav-link {
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.8);
+    padding: 8px 14px;
+    border-radius: 9999px;
+    transition: color 0.2s, background 0.2s;
+    background: transparent;
+    border: none;
+  }
+  .nav-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.07);
+  }
+  .nav-link-cta {
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #000;
+    background: #fff;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    transition: opacity 0.2s;
+    border: none;
+  }
+  .nav-link-cta:hover { opacity: 0.88; }
+
+  /* ── Scroll Progress ── */
+  #scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #a78bfa, #ec4899);
+    z-index: 9999;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.05s linear;
+  }
+
+  /* ── Card hover effects ── */
+  .card-hover {
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), box-shadow 0.4s;
+  }
+  .card-hover:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 30px 80px rgba(99,102,241,0.15), 0 0 0 1px rgba(99,102,241,0.25);
+  }
+
+  .stat-number {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: clamp(2.5rem, 5vw, 3.8rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  /* ── Marquee ── */
+  .marquee-wrap { overflow: hidden; }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 24s linear infinite;
+  }
+
+  /* ── Form Inputs ── */
+  .glass-input {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .glass-input::placeholder { color: rgba(255,255,255,0.2); }
+  .glass-input:focus {
+    outline: none;
+    border-color: rgba(99,102,241,0.55);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  }
+
+  /* ── Slider range ── */
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.1);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(99,102,241,0.7);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 14px rgba(99,102,241,0.7);
+  }
+
+  .glass-hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+
+  .faq-content {
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  }
+
+  .hover-white {
+    transition: color 0.2s ease;
+  }
+  .hover-white:hover {
+    color: #ffffff !important;
+  }
+}

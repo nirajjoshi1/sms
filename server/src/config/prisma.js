@@ -16,16 +16,19 @@ const prisma = prismaBase.$extends({
       async $allOperations({ model, operation, args, query }) {
         const user = asyncLocalStorage.getStore();
         
-        // Skip models that don't need tenant isolation, or if no user context, or SUPER_ADMIN
         const skipModels = ['School', 'User', 'Backup', 'SystemSetting'];
         
-        if (
-            skipModels.includes(model) || 
-            !user || 
-            user.role === 'SUPER_ADMIN' ||
-            !user.schoolId
-        ) {
+        if (skipModels.includes(model) || !user) {
             return query(args);
+        }
+
+        if (user.role === 'SUPER_ADMIN') {
+            return query(args);
+        }
+
+        // CRITICAL: If the user is not a SUPER_ADMIN and has no schoolId, they should not be able to bypass isolation!
+        if (!user.schoolId) {
+            throw new Error(`Access Denied: User ${user.id} has no schoolId and is not a SUPER_ADMIN. Cannot perform operation on ${model}.`);
         }
 
         // Initialize args if undefined

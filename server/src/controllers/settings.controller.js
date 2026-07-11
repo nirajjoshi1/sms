@@ -13,6 +13,8 @@ const pick = (source, keys) => keys.reduce((data, key) => {
     return data;
 }, {});
 
+const maskSecret = (secret) => secret ? '********' : '';
+
 const upsertSingle = async (model, data) => {
     const existing = await model.findFirst();
     return existing
@@ -264,11 +266,22 @@ exports.updateNotificationSettings = asyncHandler(async (req, res) => {
 // =====================================
 exports.getSmsSettings = asyncHandler(async (req, res) => {
     const settings = await getSingleOrDefault(prisma.smsSetting, defaults.sms);
+    if (settings) {
+        settings.twilioAuthToken = maskSecret(settings.twilioAuthToken);
+        settings.nexmoApiSecret = maskSecret(settings.nexmoApiSecret);
+        settings.msg91AuthKey = maskSecret(settings.msg91AuthKey);
+    }
     res.status(200).json(new ApiResponse(200, settings, "SMS settings fetched successfully"));
 });
 
 exports.updateSmsSettings = asyncHandler(async (req, res) => {
     const data = pick(req.body, smsFields);
+    
+    // Prevent overwriting with masked values
+    ['twilioAuthToken', 'nexmoApiSecret', 'msg91AuthKey'].forEach(field => {
+        if (data[field] === '********') delete data[field];
+    });
+
     const settings = await upsertSingle(prisma.smsSetting, data);
 
     res.status(200).json(new ApiResponse(200, settings, "SMS settings updated successfully"));
@@ -323,11 +336,19 @@ exports.testSms = asyncHandler(async (req, res) => {
 // =====================================
 exports.getEmailSettings = asyncHandler(async (req, res) => {
     const settings = await getSingleOrDefault(prisma.emailSetting, defaults.email);
+    if (settings) {
+        settings.smtpPassword = maskSecret(settings.smtpPassword);
+    }
     res.status(200).json(new ApiResponse(200, settings, "Email settings fetched successfully"));
 });
 
 exports.updateEmailSettings = asyncHandler(async (req, res) => {
     const data = pick(req.body, emailFields);
+    
+    if (data.smtpPassword === '********') {
+        delete data.smtpPassword;
+    }
+
     const settings = await upsertSingle(prisma.emailSetting, data);
 
     res.status(200).json(new ApiResponse(200, settings, "Email settings updated successfully"));
@@ -377,11 +398,21 @@ exports.testEmail = asyncHandler(async (req, res) => {
 // =====================================
 exports.getPaymentSettings = asyncHandler(async (req, res) => {
     const settings = await getSingleOrDefault(prisma.paymentSetting, defaults.payment);
+    if (settings) {
+        settings.stripeSecretKey = maskSecret(settings.stripeSecretKey);
+        settings.paypalSecret = maskSecret(settings.paypalSecret);
+        settings.razorpayKeySecret = maskSecret(settings.razorpayKeySecret);
+    }
     res.status(200).json(new ApiResponse(200, settings, "Payment settings fetched successfully"));
 });
 
 exports.updatePaymentSettings = asyncHandler(async (req, res) => {
     const data = pick(req.body, paymentFields);
+    
+    ['stripeSecretKey', 'paypalSecret', 'razorpayKeySecret'].forEach(field => {
+        if (data[field] === '********') delete data[field];
+    });
+
     const settings = await upsertSingle(prisma.paymentSetting, data);
 
     res.status(200).json(new ApiResponse(200, settings, "Payment settings updated successfully"));

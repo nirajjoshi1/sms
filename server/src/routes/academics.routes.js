@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const academicsController = require('../controllers/academics.controller');
-const { verifyJWT, authorizeRoles } = require('../middleware/auth.middleware');
+const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 
-// All routes require authentication
+// All routes require authentication and school context
 router.use(verifyJWT);
+router.use(requireSchoolContext);
 
 // Class routes
 router.route('/classes')

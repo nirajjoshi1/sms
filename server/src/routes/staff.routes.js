@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const staffController = require('../controllers/staff.controller');
-const { verifyJWT, authorizeRoles } = require('../middleware/auth.middleware');
+const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 
-// All routes require authentication
+// All routes require authentication and school context
 router.use(verifyJWT);
+router.use(requireSchoolContext);
 
 // Get all staff
-router.get('/', staffController.getStaff);
+router.get('/', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getStaff);
 
 // Get disabled staff
-router.get('/disabled', staffController.getDisabledStaff);
+router.get('/disabled', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getDisabledStaff);
 
 // Add new staff (with photo upload)
 router.post(
@@ -22,7 +23,7 @@ router.post(
 );
 
 // Get staff details by ID
-router.get('/:id', staffController.getStaffDetails);
+router.get('/:id', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getStaffDetails);
 
 // Update staff (with photo upload)
 router.put(
