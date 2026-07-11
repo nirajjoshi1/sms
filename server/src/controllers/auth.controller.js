@@ -13,6 +13,19 @@ const generateToken = (userId, role) => {
     );
 };
 
+// Cross-origin production deployments need SameSite=None for the browser to
+// attach the HttpOnly session cookie to credentialed API requests.
+const getAuthCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+};
+
 // @desc    Create a new user (Authenticated: SUPER_ADMIN or ADMIN)
 // @route   POST /api/v1/auth/users
 exports.createUser = asyncHandler(async (req, res) => {
@@ -117,12 +130,7 @@ exports.login = asyncHandler(async (req, res) => {
     });
 
     return res.status(200)
-        .cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        .cookie('token', token, getAuthCookieOptions())
         .json(new ApiResponse(200, {
             user: userWithSchool
         }, "Login successful"));
@@ -131,8 +139,9 @@ exports.login = asyncHandler(async (req, res) => {
 // @desc    Logout user
 // @route   POST /api/v1/auth/logout
 exports.logout = asyncHandler(async (req, res) => {
+    const { maxAge, ...clearOptions } = getAuthCookieOptions();
     return res.status(200)
-        .clearCookie('token')
+        .clearCookie('token', clearOptions)
         .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
