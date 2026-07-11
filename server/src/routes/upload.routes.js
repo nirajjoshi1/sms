@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload.middleware');
-const { verifyJWT } = require('../middleware/auth.middleware');
+const { verifyJWT, requireSchoolContext } = require('../middleware/auth.middleware');
+
+router.use(verifyJWT);
+router.use(requireSchoolContext);
 const { ApiResponse } = require('../utils/ApiResponse');
 const { asyncHandler } = require('../utils/asyncHandler');
 

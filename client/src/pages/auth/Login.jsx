@@ -28,87 +28,144 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      {/* Background blobs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
-      </div>
+    <div style={{
+      minHeight: '100vh',
+      background: '#000',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden',
+      fontFamily: "'Barlow', sans-serif"
+    }}>
+      {/* Background gradients */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: 'radial-gradient(circle at 80% 20%, rgba(99,102,241,0.12) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(236,72,153,0.08) 0%, transparent 50%)'
+      }} />
 
-      <div className="relative w-full max-w-md">
-        {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8">
-
+      <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px' }}>
+        {/* Card using liquid-glass-strong */}
+        <div 
+          className="liquid-glass-strong"
+          style={{
+            borderRadius: '24px',
+            padding: '40px',
+            boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)'
+          }}
+        >
           {/* Logo / Brand */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-600/30">
-              <GraduationCap className="w-9 h-9 text-white" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 36 }}>
+            <div 
+              className="liquid-glass"
+              style={{
+                width: 60, height: 60, borderRadius: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 16,
+                boxShadow: '0 0 20px rgba(99,102,241,0.25)'
+              }}
+            >
+              <GraduationCap style={{ width: 28, height: 28, color: '#a78bfa' }} />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Gradex SMS</h1>
-            <p className="text-gray-400 text-sm mt-1">School Management System</p>
+            <h1 className="heading-display text-3xl text-white">Gradex SMS</h1>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 300, fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+              School Management System
+            </p>
           </div>
 
-          <h2 className="text-lg font-semibold text-white mb-6 text-center">Sign in to your account</h2>
+          <h2 style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 500, fontSize: 13, color: '#fff', textAlign: 'center', marginBottom: 28, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Sign in to your account
+          </h2>
 
           {/* Error Alert */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-3 mb-5 text-sm flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+            <div style={{
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: '#f87171',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              fontSize: '13px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
               {error}
             </div>
           )}
 
-       
-          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
-            {/* Hidden honeypot fields to catch browser autofill */}
-            <input type="text" style={{ display: 'none' }} name="prevent_autofill" autoComplete="off" />
-            <input type="password" style={{ display: 'none' }} name="password_fake" autoComplete="off" />
-
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }} autoComplete="off">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="email">
-                Email address
+              <label style={{ display: 'block', fontFamily: "'Barlow', sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 8 }} htmlFor="email">
+                Email Address
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div style={{ position: 'relative' }}>
+                <Mail style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: 'rgba(255,255,255,0.3)' }} />
                 <input
                   id="email"
-                  name="email_login_field"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="one-time-code"
-                  className="w-full bg-gray-900 border border-gray-800 text-white placeholder-gray-500 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition shadow-inner"
+                  placeholder="you@school.edu"
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    borderRadius: '14px',
+                    padding: '14px 16px 14px 44px',
+                    fontSize: '14px',
+                    fontFamily: "'Barlow', sans-serif",
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    outline: 'none'
+                  }}
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="password">
+              <label style={{ display: 'block', fontFamily: "'Barlow', sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 8 }} htmlFor="password">
                 Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div style={{ position: 'relative' }}>
+                <Lock style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: 'rgba(255,255,255,0.3)' }} />
                 <input
                   id="password"
-                  name="password_login_field"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="new-password"
-                  className="w-full bg-gray-900 border border-gray-800 text-white placeholder-gray-500 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition shadow-inner"
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    borderRadius: '14px',
+                    padding: '14px 44px 14px 44px',
+                    fontSize: '14px',
+                    fontFamily: "'Barlow', sans-serif",
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    outline: 'none'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition"
+                  style={{
+                    position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                    background: 'transparent', border: 'none', padding: 0,
+                    color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
                 </button>
               </div>
             </div>
@@ -117,12 +174,30 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              id="login-submit-btn"
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-indigo-600/20 mt-2 active:scale-[0.98]"
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '14px',
+                background: loading ? 'rgba(255,255,255,0.15)' : '#fff',
+                color: '#000',
+                fontFamily: "'Barlow', sans-serif",
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.2s',
+                marginTop: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8
+              }}
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" />
                   Signing in...
                 </>
               ) : (
@@ -132,8 +207,8 @@ const Login = () => {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-600 mt-8">
-            © {new Date().getFullYear()} Gradex School Management System
+          <p style={{ textAlign: 'center', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 32 }}>
+            © {new Date().getFullYear()} Gradex School Management System. All rights reserved.
           </p>
         </div>
       </div>

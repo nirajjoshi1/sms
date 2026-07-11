@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const feesController = require('../controllers/fees.controller');
+const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+
+// All fee routes require ADMIN or ACCOUNTANT roles and school context
+router.use(requireSchoolContext);
+router.use(authorizeRoles('ADMIN', 'ACCOUNTANT'));
 
 // Offline bank payment routes
 router.route('/offline-payments')

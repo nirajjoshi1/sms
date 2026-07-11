@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/student.controller');
-const { verifyJWT, authorizeRoles } = require('../middleware/auth.middleware');
+const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 
-// All routes require authentication
+// All routes require authentication and school context
 router.use(verifyJWT);
+router.use(requireSchoolContext);
 
 // Get all students
-router.get('/', studentController.getStudents);
+router.get('/', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), studentController.getStudents);
 
 // Get disabled students
-router.get('/disabled', studentController.getDisabledStudents);
+router.get('/disabled', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), studentController.getDisabledStudents);
 
 // Admit new student (with photo and birth certificate upload)
 router.post(
@@ -25,7 +26,7 @@ router.post(
 );
 
 // Get student details by ID
-router.get('/:id', studentController.getStudentDetails);
+router.get('/:id', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), studentController.getStudentDetails);
 
 // Update student (with photo and birth certificate upload)
 router.put(

@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const tc = require('../controllers/teacher.controller');
-const { authorizeRoles } = require('../middleware/auth.middleware');
+const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 
+router.use(requireSchoolContext);
 router.use(authorizeRoles('TEACHER'));
 
 // Profile & Dashboard

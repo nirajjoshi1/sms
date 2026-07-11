@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notification.controller');
+const { requireSchoolContext } = require('../middleware/auth.middleware');
+
+router.use(requireSchoolContext);
 
 router.route('/')
     .get(notificationController.getNotifications)

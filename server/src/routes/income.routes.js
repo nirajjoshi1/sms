@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const incomeController = require('../controllers/income.controller');
-const { verifyJWT, authorizeRoles } = require('../middleware/auth.middleware');
+const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 
-// All routes require authentication
+// All routes require authentication and school context
 router.use(verifyJWT);
+router.use(requireSchoolContext);
 
 // Income Head routes
 router.route('/heads')

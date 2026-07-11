@@ -13,13 +13,46 @@ const generateToken = (userId, role) => {
     );
 };
 
-// @desc    Register a new user (Super Admin only in prod)
-// @route   POST /api/v1/auth/register
-exports.register = asyncHandler(async (req, res) => {
-    const { name, email, password, role } = req.body;
+// @desc    Create a new user (Authenticated: SUPER_ADMIN or ADMIN)
+// @route   POST /api/v1/auth/users
+exports.createUser = asyncHandler(async (req, res) => {
+    let { name, email, password, role, schoolId } = req.body;
 
-    if (!name || !email || !password) {
-        throw new ApiError(400, "Name, email and password are required");
+    if (!name || !email || !password || !role) {
+        throw new ApiError(400, "Name, email, password, and role are required");
+    }
+
+    // Normalize email
+    email = email.trim().toLowerCase();
+
+    // Password strength validation (basic)
+    if (password.length < 8) {
+        throw new ApiError(400, "Password must be at least 8 characters long");
+    }
+
+    const creatorRole = req.user.role;
+    const creatorSchoolId = req.user.schoolId;
+
+    // Strict Role Allowlist
+    const validRoles = ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'RECEPTIONIST'];
+    if (!validRoles.includes(role)) {
+        throw new ApiError(400, "Invalid role specified");
+    }
+
+    // Role hierarchies
+    if (creatorRole === 'ADMIN') {
+        if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+            throw new ApiError(403, "Admins cannot create other admins or super admins");
+        }
+        // Force the new user to belong to the Admin's school
+        schoolId = creatorSchoolId;
+    } else if (creatorRole === 'SUPER_ADMIN') {
+        // SUPER_ADMIN can create ADMINs, but they must assign a schoolId for them
+        if (role !== 'SUPER_ADMIN' && !schoolId) {
+            throw new ApiError(400, "School ID is required when creating a non-Super Admin user");
+        }
+    } else {
+        throw new ApiError(403, "You do not have permission to create users");
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -34,23 +67,14 @@ exports.register = asyncHandler(async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role: role || 'ADMIN'
+            role,
+            schoolId: schoolId || null
         }
     });
 
-    const token = generateToken(user.id, user.role);
-
-    return res.status(201)
-        .cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        })
-        .json(new ApiResponse(201, {
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
-            token
-        }, "User registered successfully"));
+    return res.status(201).json(new ApiResponse(201, {
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, schoolId: user.schoolId }
+    }, "User created successfully"));
 });
 
 // @desc    Login user
@@ -100,8 +124,7 @@ exports.login = asyncHandler(async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
         .json(new ApiResponse(200, {
-            user: userWithSchool,
-            token
+            user: userWithSchool
         }, "Login successful"));
 });
 

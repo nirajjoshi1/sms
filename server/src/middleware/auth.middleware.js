@@ -58,3 +58,46 @@ exports.authorizeRoles = (...roles) => {
         next();
     };
 };
+
+// ==========================================
+// School Context / Tenant Isolation Middleware
+// ==========================================
+exports.requireSchoolContext = (req, res, next) => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+    
+    if (req.user.role !== 'SUPER_ADMIN' && !req.user.schoolId) {
+        throw new ApiError(403, "Access denied - No school context found for user");
+    }
+    
+    // Auto-inject schoolId into body/query if not present, to ensure controllers use the correct scope
+    if (req.user.schoolId) {
+        if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+            // Prevent users from injecting a different schoolId
+            if (req.body.schoolId && req.body.schoolId !== req.user.schoolId) {
+                throw new ApiError(403, "Access denied - Cannot operate on another tenant's resources");
+            }
+            req.body.schoolId = req.user.schoolId;
+        }
+    }
+    
+    next();
+};
+
+// ==========================================
+// Ownership / Teacher Assignment Middleware (Base)
+// ==========================================
+// Note: Object-level validation is typically handled inside the controller or a service,
+// but this base middleware ensures basic prerequisites.
+exports.requireTeacherAssignment = (req, res, next) => {
+    if (req.user.role !== 'TEACHER') {
+        return next(); // Pass through if not a teacher (e.g. an ADMIN is making the request)
+    }
+    
+    if (!req.user.staffId) {
+        throw new ApiError(403, "Access denied - No staff record associated with this teacher account");
+    }
+    
+    next();
+};

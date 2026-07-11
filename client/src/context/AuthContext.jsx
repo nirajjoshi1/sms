@@ -10,29 +10,22 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Verify token on app load
+  // Verify user on app load (server checks cookie)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get('/auth/me')
-        .then((res) => {
-          setUser(res.data.data);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    api.get('/auth/me')
+      .then((res) => {
+        setUser(res.data.data);
+      })
+      .catch(() => {
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    const { user, token } = res.data.data;
-    localStorage.setItem('token', token);
+    const { user } = res.data.data;
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
     return user;
@@ -40,7 +33,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await api.post('/auth/logout');
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
