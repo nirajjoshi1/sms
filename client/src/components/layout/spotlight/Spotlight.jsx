@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, LogOut } from 'lucide-react';
 import { NAVIGATION_ITEMS } from '../../../constants/navigation';
 
-const Spotlight = ({ isOpen, onClose, logout }) => {
+const Spotlight = ({ isOpen, onClose, logout, user }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
@@ -14,6 +14,9 @@ const Spotlight = ({ isOpen, onClose, logout }) => {
     const items = [];
 
     NAVIGATION_ITEMS.forEach(navItem => {
+      // Role-based filtering
+      if (navItem.role && user?.role !== navItem.role) return;
+      if (navItem.roles && !navItem.roles.includes(user?.role)) return;
       if (navItem.items) {
         // Add parent as category
         navItem.items.forEach(item => {

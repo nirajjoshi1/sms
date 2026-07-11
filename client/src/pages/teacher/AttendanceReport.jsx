@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ClipboardList, Users, Search } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const AttendanceReport = () => {
   const [classes, setClasses] = useState([]);
@@ -112,8 +113,7 @@ const AttendanceReport = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">From Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               className="bg-muted/30 border border-border rounded-lg h-9 px-2.5 text-xs font-bold focus:outline-none"
@@ -122,8 +122,7 @@ const AttendanceReport = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">To Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               className="bg-muted/30 border border-border rounded-lg h-9 px-2.5 text-xs font-bold focus:outline-none"

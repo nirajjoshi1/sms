@@ -3,6 +3,9 @@ import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, DollarSign } fro
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
+
 
 const FeesMaster = () => {
   const [masters, setMasters] = useState([]);
@@ -294,17 +297,7 @@ const FeesMaster = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingId ? 'Edit Fee Master' : 'Add Fee Master'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingId ? 'Edit Fee Master' : 'Add Fee Master'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Fee Group *</label>
@@ -352,8 +345,7 @@ const FeesMaster = () => {
 
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Due Date</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.dueDate}
                   onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                   className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -423,8 +415,7 @@ const FeesMaster = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );
