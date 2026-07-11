@@ -3,6 +3,8 @@ import { Plus, Edit2, Trash2, Image, Search, Link } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import ImageUpload from '../../components/common/ImageUpload';
+import CustomModal from '../../components/ui/CustomModal';
+
 
 const BannerImages = () => {
   const [banners, setBanners] = useState([]);
@@ -235,17 +237,7 @@ const BannerImages = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingItem ? 'Edit Banner' : 'Add Banner'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingItem ? 'Edit Banner' : 'Add Banner'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
@@ -330,8 +322,7 @@ const BannerImages = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );

@@ -298,21 +298,9 @@ const LandingPage = () => {
 
       {/* ── NAVBAR (Global) ── */}
       <nav
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: scrolled ? '12px 40px' : '24px 40px',
-          background: scrolled ? 'rgba(0, 0, 0, 0.75)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid transparent',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
+        className={`fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between transition-all duration-300 ease-out px-6 md:px-10 ${
+          scrolled ? 'py-3 bg-black/75 backdrop-blur-xl border-b border-white/5' : 'py-6 bg-transparent border-b border-transparent'
+        }`}
       >
         {/* Logo circle */}
         <motion.div
@@ -335,9 +323,8 @@ const LandingPage = () => {
         {/* Nav pill (hidden on small) */}
         <motion.div
           {...fadeUp(0.2)}
-          className="liquid-glass nav-pill"
-          style={{ display: 'none', borderRadius: 9999 }}
-          ref={el => { if (el) el.style.display = 'flex'; }}
+          className="liquid-glass nav-pill hidden md:flex"
+          style={{ borderRadius: 9999 }}
         >
           {NAV_LINKS.map(link => (
             <button
@@ -402,7 +389,7 @@ const LandingPage = () => {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
               paddingTop: 96, paddingBottom: 0,
-              paddingLeft: 24, paddingRight: 24,
+              paddingLeft: 'var(--section-px)', paddingRight: 'var(--section-px)',
               textAlign: 'center',
             }}
           >
@@ -578,7 +565,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           3D DASHBOARD SHOWCASE
       ═══════════════════════════════════════════════════════════════ */}
-      <section id="platform" style={{ background: '#000', padding: '80px 40px 0', position: 'relative', zIndex: 10 }}>
+      <section id="platform" style={{ background: '#000', padding: '80px var(--section-px) 0', position: 'relative', zIndex: 10 }}>
         <motion.div
           initial={{ opacity: 0, y: 80, scale: 0.95 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -662,7 +649,7 @@ const LandingPage = () => {
           background: 'radial-gradient(ellipse 80% 60% at 20% 40%, rgba(6,182,212,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 60%, rgba(99,102,241,0.07) 0%, transparent 60%)',
         }} />
 
-        <div style={{ position: 'relative', zIndex: 10, padding: '100px 40px 80px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '100px var(--section-px) 80px', maxWidth: 1200, margin: '0 auto' }}>
           {/* Header */}
           <div style={{ marginBottom: 80 }}>
             <motion.p
@@ -693,7 +680,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           FEATURES GRID — deep dark
       ═══════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#000', padding: '100px 40px' }}>
+      <section style={{ background: '#000', padding: '100px var(--section-px)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 72 }}>
             <motion.p
@@ -746,7 +733,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           PRICING — with shader bg
       ═══════════════════════════════════════════════════════════════ */}
-      <section id="pricing" style={{ position:'relative', overflow:'hidden', background:'#000', padding:'100px 40px' }}>
+      <section id="pricing" style={{ position:'relative', overflow:'hidden', background:'#000', padding: '100px var(--section-px)' }}>
         {/* Lightweight CSS gradient — no extra WebGL canvas */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0,
@@ -860,7 +847,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           TESTIMONIALS
       ═══════════════════════════════════════════════════════════════ */}
-      <section style={{ background:'#000', padding:'100px 40px' }}>
+      <section style={{ background:'#000', padding: '100px var(--section-px)' }}>
         <div style={{ maxWidth:1000, margin:'0 auto' }}>
           <div style={{ marginBottom:60 }}>
             <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontFamily:"'Barlow', sans-serif", fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:20 }}>
@@ -908,7 +895,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           FAQ
       ═══════════════════════════════════════════════════════════════ */}
-      <section id="faq" style={{ background:'#000', padding:'80px 40px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+      <section id="faq" style={{ background:'#000', padding: '80px var(--section-px)', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ maxWidth:720, margin:'0 auto' }}>
           <div style={{ marginBottom:60 }}>
             <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontFamily:"'Barlow', sans-serif", fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:20 }}>
@@ -957,7 +944,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           REGISTER / CTA FORM
       ═══════════════════════════════════════════════════════════════ */}
-      <section id="register" style={{ background:'#000', padding:'100px 40px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+      <section id="register" style={{ background:'#000', padding: '100px var(--section-px)', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1.4fr', gap:80, alignItems:'start' }}>
           {/* Left info */}
           <div style={{ position:'sticky', top:100 }}>
@@ -1059,7 +1046,7 @@ const LandingPage = () => {
       {/* ═══════════════════════════════════════════════════════════════
           FOOTER
       ═══════════════════════════════════════════════════════════════ */}
-      <footer style={{ background:'#000', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'80px 40px 40px' }}>
+      <footer style={{ background:'#000', borderTop:'1px solid rgba(255,255,255,0.05)', padding: '80px var(--section-px) 40px' }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           
           {/* Top Multi-column Section */}

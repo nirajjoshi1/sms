@@ -30,6 +30,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  /* Responsive padding variables */
+  --section-px: 24px;
+  @media (min-width: 768px) {
+    --section-px: 40px;
+  }
+
   /* Reset margin/padding only within the landing page container */
   &, & *, & *::before, & *::after {
     box-sizing: border-box;
@@ -178,7 +184,6 @@
 
   /* ── Nav Pill ── */
   .nav-pill {
-    display: flex;
     align-items: center;
     gap: 2px;
     padding: 6px;

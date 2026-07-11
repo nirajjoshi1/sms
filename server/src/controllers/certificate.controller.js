@@ -10,7 +10,15 @@ exports.getCertificateTemplates = asyncHandler(async (req, res) => {
     const templates = await prisma.certificateTemplate.findMany({
         orderBy: { name: 'asc' }
     });
-    res.status(200).json(new ApiResponse(200, templates, "Certificate templates fetched successfully"));
+    
+    // Map fields for frontend
+    const mappedTemplates = templates.map(t => ({
+        ...t,
+        headerText: t.headerCenterText,
+        footerText: t.footerCenterText
+    }));
+    
+    res.status(200).json(new ApiResponse(200, mappedTemplates, "Certificate templates fetched successfully"));
 });
 
 exports.getCertificateTemplateById = asyncHandler(async (req, res) => {
@@ -23,25 +31,58 @@ exports.getCertificateTemplateById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Certificate template not found");
     }
 
-    res.status(200).json(new ApiResponse(200, template, "Certificate template fetched successfully"));
+    const mappedTemplate = {
+        ...template,
+        headerText: template.headerCenterText,
+        footerText: template.footerCenterText
+    };
+
+    res.status(200).json(new ApiResponse(200, mappedTemplate, "Certificate template fetched successfully"));
 });
 
 exports.createCertificateTemplate = asyncHandler(async (req, res) => {
+    const { name, bodyText, headerText, footerText, schoolId } = req.body;
+    
     const template = await prisma.certificateTemplate.create({
-        data: { ...req.body }
+        data: {
+            name,
+            bodyText,
+            headerCenterText: headerText,
+            footerCenterText: footerText,
+            schoolId
+        }
     });
-    res.status(201).json(new ApiResponse(201, template, "Certificate template created successfully"));
+    
+    const mappedTemplate = {
+        ...template,
+        headerText: template.headerCenterText,
+        footerText: template.footerCenterText
+    };
+    
+    res.status(201).json(new ApiResponse(201, mappedTemplate, "Certificate template created successfully"));
 });
 
 exports.updateCertificateTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { name, bodyText, headerText, footerText } = req.body;
 
     const template = await prisma.certificateTemplate.update({
         where: { id },
-        data: { ...req.body }
+        data: {
+            name,
+            bodyText,
+            headerCenterText: headerText,
+            footerCenterText: footerText,
+        }
     });
 
-    res.status(200).json(new ApiResponse(200, template, "Certificate template updated successfully"));
+    const mappedTemplate = {
+        ...template,
+        headerText: template.headerCenterText,
+        footerText: template.footerCenterText
+    };
+
+    res.status(200).json(new ApiResponse(200, mappedTemplate, "Certificate template updated successfully"));
 });
 
 exports.deleteCertificateTemplate = asyncHandler(async (req, res) => {

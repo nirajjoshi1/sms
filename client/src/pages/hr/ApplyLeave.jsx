@@ -3,6 +3,9 @@ import { Calendar, Clock, FileText, Upload, Plus } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
+
 
 const ApplyLeave = () => {
   const [leaveTypes, setLeaveTypes] = useState([]);
@@ -184,17 +187,7 @@ const ApplyLeave = () => {
 
       {/* Apply Leave Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                Apply for Leave
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={"Apply for Leave"} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-3">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Leave Type *</label>
@@ -214,8 +207,7 @@ const ApplyLeave = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">From Date *</label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.fromDate}
                     onChange={(e) => setFormData({...formData, fromDate: e.target.value})}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -224,8 +216,7 @@ const ApplyLeave = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">To Date *</label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.toDate}
                     onChange={(e) => setFormData({...formData, toDate: e.target.value})}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -290,8 +281,7 @@ const ApplyLeave = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );

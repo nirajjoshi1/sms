@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import Login from '../pages/auth/Login';
 import LandingPage from '../pages/public/LandingPage';
+import Unauthorized from '../pages/public/Unauthorized';
+import NotFound from '../pages/public/NotFound';
 import Schools from '../pages/dashboard/Schools';
 import Dashboard from '../pages/dashboard/Dashboard';
 import MainLayout from '../components/layout/MainLayout';
@@ -96,14 +98,6 @@ import PaymentSetting from '../pages/settings/PaymentSetting';
 import PrintSetting from '../pages/settings/PrintSetting';
 import BackupSetting from '../pages/settings/BackupSetting';
 
-const Unauthorized = () => (
-  <div className="flex items-center justify-center h-screen bg-gray-950">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-red-400">403</h1>
-      <p className="text-gray-400 mt-2">You don't have permission to access this page.</p>
-    </div>
-  </div>
-);
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -140,7 +134,7 @@ const AppRoutes = () => {
         <Route index element={isAuthenticated ? <Dashboard /> : null} />
 
         {/* Student Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'RECEPTIONIST']} />}>
           <Route path="students" element={<StudentList />} />
           <Route path="students/:id" element={<StudentProfile />} />
           <Route path="students/admission" element={<StudentAdmission />} />
@@ -151,14 +145,14 @@ const AppRoutes = () => {
         </Route>
 
         {/* Staff Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="staff" element={<StaffList />} />
           <Route path="staff/add" element={<StaffAdd />} />
           <Route path="staff/edit/:id" element={<StaffEdit />} />
         </Route>
 
         {/* Academics Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="academics/class" element={<Classes />} />
           <Route path="academics/sections" element={<Sections />} />
           <Route path="academics/subjects" element={<Subjects />} />
@@ -170,7 +164,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* HR Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']} />}>
           <Route path="hr/staff-directory" element={<StaffDirectory />} />
           <Route path="hr/disabled-staff" element={<DisabledStaff />} />
           <Route path="hr/attendance" element={<StaffAttendance />} />
@@ -184,7 +178,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* Fees Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']} />}>
           <Route path="fees/collect" element={<CollectFees />} />
           <Route path="fees/search" element={<SearchFees />} />
           <Route path="fees/due" element={<DueFees />} />
@@ -198,7 +192,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* Income Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']} />}>
           <Route path="income/head" element={<IncomeHead />} />
           <Route path="income/add" element={<AddIncome />} />
           <Route path="income/edit/:id" element={<AddIncome />} />
@@ -206,7 +200,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* Expense Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']} />}>
           <Route path="expenses/head" element={<ExpenseHead />} />
           <Route path="expenses/add" element={<AddExpense />} />
           <Route path="expenses/edit/:id" element={<AddExpense />} />
@@ -214,7 +208,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* Certificate Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="certificates/student-certificate" element={<StudentCertificate />} />
           <Route path="certificates/generate-certificate" element={<GenerateCertificate />} />
           <Route path="certificates/transfer-certificate" element={<TransferCertificate />} />
@@ -225,7 +219,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* CMS Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="cms/event" element={<Events />} />
           <Route path="cms/gallery" element={<Gallery />} />
           <Route path="cms/news" element={<News />} />
@@ -236,7 +230,7 @@ const AppRoutes = () => {
         </Route>
 
         {/* Settings Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="settings/general" element={<GeneralSetting />} />
           <Route path="settings/session" element={<SessionSetting />} />
           <Route path="settings/notification" element={<NotificationSetting />} />
@@ -269,7 +263,7 @@ const AppRoutes = () => {
       </Route>
 
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

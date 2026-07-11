@@ -3,6 +3,9 @@ import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Percent, Tag } f
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
+
 
 const FeesDiscount = () => {
   const [discounts, setDiscounts] = useState([]);
@@ -287,17 +290,7 @@ const FeesDiscount = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingId ? 'Edit Discount' : 'Add Discount'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingId ? 'Edit Discount' : 'Add Discount'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Discount Name *</label>
@@ -380,8 +373,7 @@ const FeesDiscount = () => {
 
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Expiry Date</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.expiryDate}
                   onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
                   className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -416,8 +408,7 @@ const FeesDiscount = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );
