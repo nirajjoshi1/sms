@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import Login from '../pages/auth/Login';
 import LandingPage from '../pages/public/LandingPage';
+import Unauthorized from '../pages/public/Unauthorized';
+import NotFound from '../pages/public/NotFound';
 import Schools from '../pages/dashboard/Schools';
 import Dashboard from '../pages/dashboard/Dashboard';
 import MainLayout from '../components/layout/MainLayout';
@@ -96,14 +98,6 @@ import PaymentSetting from '../pages/settings/PaymentSetting';
 import PrintSetting from '../pages/settings/PrintSetting';
 import BackupSetting from '../pages/settings/BackupSetting';
 
-const Unauthorized = () => (
-  <div className="flex items-center justify-center h-screen bg-gray-950">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-red-400">403</h1>
-      <p className="text-gray-400 mt-2">You don't have permission to access this page.</p>
-    </div>
-  </div>
-);
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -269,7 +263,7 @@ const AppRoutes = () => {
       </Route>
 
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
