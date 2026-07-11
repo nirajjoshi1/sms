@@ -86,6 +86,7 @@ const MainLayout = () => {
           isOpen={isSpotlightOpen} 
           onClose={() => setIsSpotlightOpen(false)} 
           logout={logout}
+          user={user}
         />
       </div>
     </div>
