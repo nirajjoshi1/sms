@@ -8,7 +8,8 @@ import Spotlight from './spotlight/Spotlight';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const themePreferences = useTheme();
+  const { theme, setTheme } = themePreferences;
   
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -68,6 +69,7 @@ const MainLayout = () => {
           user={user}
           theme={theme}
           setTheme={setTheme}
+          themePreferences={themePreferences}
           isSidebarCollapsed={isSidebarCollapsed}
           setIsSidebarCollapsed={setIsSidebarCollapsed}
           setIsSpotlightOpen={setIsSpotlightOpen}
