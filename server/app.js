@@ -24,6 +24,9 @@ const cmsRoutes = require("./src/routes/cms.routes");
 const schoolRoutes = require("./src/routes/school.routes");
 const uploadRoutes = require("./src/routes/upload.routes");
 const dashboardRoutes = require("./src/routes/dashboard.routes");
+const notificationRoutes = require("./src/routes/notification.routes");
+const teacherRoutes = require("./src/routes/teacher.routes");
+const schoolRequestRoutes = require("./src/routes/schoolRequest.routes");
 
 const app = express();
 
@@ -126,14 +129,19 @@ app.get("/api/v1", (req, res) => {
     });
 });
 
+// Conditional rate limiting middleware wrapper
+const conditionalAuthLimiter = process.env.NODE_ENV === 'production' ? authLimiter : (req, res, next) => next();
+const conditionalApiLimiter = process.env.NODE_ENV === 'production' ? apiLimiter : (req, res, next) => next();
+
 // Public Routes (no auth required) - with rate limiting
-app.use("/api/v1/auth", authLimiter, authRoutes);
+app.use("/api/v1/auth", conditionalAuthLimiter, authRoutes);
+app.use("/api/v1/school-requests", schoolRequestRoutes);
 
 // 🔐 All routes below this line require authentication
 app.use(verifyJWT);
 
 // Apply general rate limiting to all protected routes
-app.use("/api/v1", apiLimiter);
+app.use("/api/v1", conditionalApiLimiter);
 
 // Protected API Routes
 app.use("/api/v1/students", studentRoutes);
@@ -151,6 +159,8 @@ app.use("/api/v1/cms", cmsRoutes);
 app.use("/api/v1/schools", schoolRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/teacher", teacherRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

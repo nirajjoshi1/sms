@@ -27,9 +27,9 @@ exports.createCategory = asyncHandler(async (req, res) => {
     }
 
     // Check if category already exists
-    const existing = await prisma.category.findUnique({ where: { name } });
+    const existing = await prisma.category.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Category with this name already exists");
+        throw new ApiError(400, "Category with this name already exists in this school");
     }
 
     const category = await prisma.category.create({ data: { name } });
@@ -106,9 +106,9 @@ exports.createHouse = asyncHandler(async (req, res) => {
     }
 
     // Check if house already exists
-    const existing = await prisma.house.findUnique({ where: { name } });
+    const existing = await prisma.house.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "House with this name already exists");
+        throw new ApiError(400, "House with this name already exists in this school");
     }
 
     const house = await prisma.house.create({
@@ -187,9 +187,9 @@ exports.createDisableReason = asyncHandler(async (req, res) => {
     }
 
     // Check if reason already exists
-    const existing = await prisma.disableReason.findUnique({ where: { reason } });
+    const existing = await prisma.disableReason.findFirst({ where: { reason } });
     if (existing) {
-        throw new ApiError(400, "This disable reason already exists");
+        throw new ApiError(400, "This disable reason already exists in this school");
     }
 
     const disableReason = await prisma.disableReason.create({ data: { reason } });

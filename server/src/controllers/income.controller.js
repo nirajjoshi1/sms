@@ -20,9 +20,9 @@ exports.createIncomeHead = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Income head name is required");
     }
 
-    const existing = await prisma.incomeHead.findUnique({ where: { name } });
+    const existing = await prisma.incomeHead.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Income head with this name already exists");
+        throw new ApiError(400, "Income head with this name already exists in this school");
     }
 
     const head = await prisma.incomeHead.create({

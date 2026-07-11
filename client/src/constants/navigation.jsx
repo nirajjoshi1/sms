@@ -11,7 +11,12 @@ import {
   Globe, 
   BarChart3, 
   Settings2,
-  LayoutDashboard
+  LayoutDashboard,
+  BookOpen,
+  ClipboardList,
+  PenLine,
+  Calendar,
+  Award
 } from 'lucide-react';
 
 export const NAVIGATION_ITEMS = [
@@ -19,11 +24,33 @@ export const NAVIGATION_ITEMS = [
     label: "Schools",
     icon: <Building2 />,
     to: "/schools",
-    role: "SUPER_ADMIN"
+    roles: ["SUPER_ADMIN"]
+  },
+  // ─── Teacher Portal (TEACHER role only) ───
+  {
+    label: "My Dashboard",
+    icon: <LayoutDashboard />,
+    to: "/teacher/dashboard",
+    roles: ["TEACHER"]
+  },
+  {
+    label: "Teacher Portal",
+    icon: <BookOpen />,
+    roles: ["TEACHER"],
+    items: [
+      { label: 'My Schedule', to: '/teacher/schedule' },
+      { label: 'My Classes', to: '/teacher/classes' },
+      { label: 'Take Attendance', to: '/teacher/attendance' },
+      { label: 'Attendance Report', to: '/teacher/attendance/report' },
+      { label: 'Homework', to: '/teacher/homework' },
+      { label: 'Marks Entry', to: '/teacher/marks' },
+      { label: 'Class Overview', to: '/teacher/class-overview' },
+    ]
   },
   {
     label: "Student Information",
     icon: <UserSquare2 />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Student Details', to: '/students' },
       { label: 'Student Admission', to: '/students/admission' },
@@ -37,6 +64,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Fees Collection",
     icon: <Wallet />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Collect Fees', to: '/fees/collect' },
       { label: 'Search Fees Payment', to: '/fees/search' },
@@ -52,6 +80,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Income",
     icon: <DollarSign />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Add Income', to: '/income/add' },
       { label: 'Search Income', to: '/income/search' },
@@ -61,6 +90,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Expenses",
     icon: <Receipt />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Add Expense', to: '/expenses/add' },
       { label: 'Search Expense', to: '/expenses/search' },
@@ -70,6 +100,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Academics",
     icon: <GraduationCap />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Class Timetable', to: '/academics/timetable/class' },
       { label: 'Teachers Timetable', to: '/academics/timetable/teacher' },
@@ -84,6 +115,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Human Resource",
     icon: <Users2 />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Staff Directory', to: '/hr/staff-directory' },
       { label: 'Add Staff', to: '/staff/add' },
@@ -101,6 +133,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Certificate",
     icon: <FileBadge />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Student Certificate', to: '/certificates/student-certificate' },
       { label: 'Generate Certificate', to: '/certificates/generate-certificate' },
@@ -114,6 +147,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Front CMS",
     icon: <Globe />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Event', to: '/cms/event' },
       { label: 'Gallery', to: '/cms/gallery' },
@@ -127,6 +161,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "Reports",
     icon: <BarChart3 />,
+    roles: ["ADMIN"],
     items: [
       { label: 'Student Report', to: '/reports/student' },
       { label: 'Finance Report', to: '/reports/finance' },
@@ -138,6 +173,7 @@ export const NAVIGATION_ITEMS = [
   {
     label: "System Setting",
     icon: <Settings2 />,
+    roles: ["ADMIN"],
     items: [
       { label: 'General Setting', to: '/settings/general' },
       { label: 'Session Setting', to: '/settings/session' },

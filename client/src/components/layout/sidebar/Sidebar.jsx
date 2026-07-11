@@ -27,9 +27,10 @@ const Sidebar = ({ user, logout, isCollapsed }) => {
 
       {/* Sidebar Content */}
       <div className="flex-1 overflow-y-auto overflow-x-visible px-3 space-y-1 py-4 hide-scrollbar">
-        {NAVIGATION_ITEMS.map((item) => {
-          // Role-based filtering
+      {NAVIGATION_ITEMS.map((item) => {
+          // Role-based filtering — supports both `role` (string) and `roles` (array)
           if (item.role && user?.role !== item.role) return null;
+          if (item.roles && !item.roles.includes(user?.role)) return null;
 
           if (item.items) {
             return (

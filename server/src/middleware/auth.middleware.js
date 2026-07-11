@@ -23,7 +23,7 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true, isActive: true }
+        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true }
     });
 
     if (!user) {
@@ -35,7 +35,12 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
     }
 
     req.user = user;
-    next();
+    
+    // Wrap the rest of the request in the AsyncLocalStorage context
+    const { asyncLocalStorage } = require('../utils/als');
+    asyncLocalStorage.run(user, () => {
+        next();
+    });
 });
 
 // ==========================================

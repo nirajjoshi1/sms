@@ -167,6 +167,18 @@ exports.admitStudent = asyncHandler(async (req, res) => {
         }
     });
 
+    // Trigger notification
+    try {
+        const { createNotification } = require('../utils/notification');
+        await createNotification({
+            title: "New Student Admission",
+            message: `Student ${firstName} ${lastName || ''} has been admitted to Class ${student.Class?.name} - Section ${student.Section?.name} (Admission No: ${admissionNo})`,
+            type: "admission"
+        });
+    } catch (err) {
+        console.error("Failed to trigger admission notification:", err);
+    }
+
     res.status(201).json(new ApiResponse(201, student, `Student admitted successfully with Admission No: ${admissionNo}`));
 });
 
@@ -207,9 +219,9 @@ exports.updateStudent = asyncHandler(async (req, res) => {
 
     // Check if admission number is being changed and if it conflicts
     if (admissionNo && admissionNo !== existingStudent.admissionNo) {
-        const duplicate = await prisma.student.findUnique({ where: { admissionNo } });
+        const duplicate = await prisma.student.findFirst({ where: { admissionNo } });
         if (duplicate) {
-            throw new ApiError(400, "Admission number already exists");
+            throw new ApiError(400, "Admission number already exists in this school");
         }
     }
 

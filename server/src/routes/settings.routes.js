@@ -56,6 +56,8 @@ router.route('/backups')
     .get(authorizeRoles('SUPER_ADMIN', 'ADMIN'), settingsController.getBackups)
     .post(authorizeRoles('SUPER_ADMIN'), settingsController.createBackup);
 
+router.post('/backups/create', authorizeRoles('SUPER_ADMIN'), settingsController.createBackup);
+
 router.route('/backups/:id')
     .delete(authorizeRoles('SUPER_ADMIN'), settingsController.deleteBackup);
 

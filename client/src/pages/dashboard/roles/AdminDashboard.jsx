@@ -18,7 +18,8 @@ import {
   Eye,
   Edit2,
   Trash2,
-  UserX
+  UserX,
+  Briefcase
 } from 'lucide-react';
 import {
   AreaChart,
@@ -156,13 +157,20 @@ const AdminDashboard = () => {
       desc: 'Student classifications',
       icon: <CreditCard className="w-5 h-5" />
     },
-    {
+    user?.role === 'SUPER_ADMIN' ? {
       label: 'Active Users',
       value: loading ? '...' : statsData?.totalUsers?.toLocaleString() || '0',
       change: 'System access',
       trend: 'up',
       desc: 'Staff and admin accounts',
       icon: <TrendingUp className="w-5 h-5" />
+    } : {
+      label: 'Total Staff',
+      value: loading ? '...' : statsData?.totalStaff?.toLocaleString() || '0',
+      change: 'Active members',
+      trend: 'neutral',
+      desc: 'Active school staff',
+      icon: <Briefcase className="w-5 h-5" />
     },
   ];
 

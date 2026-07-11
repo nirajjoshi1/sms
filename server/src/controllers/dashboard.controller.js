@@ -27,7 +27,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       break;
   }
 
-  // Get counts
+  // Get counts - tenant scoping is handled automatically by the Prisma ALS extension
   const [
     totalStudents,
     activeStudents,
@@ -35,7 +35,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     totalSections,
     totalCategories,
     totalHouses,
-    totalUsers
+    totalUsers,
+    totalStaff
   ] = await Promise.all([
     prisma.student.count(),
     prisma.student.count({ where: { isDisabled: false } }),
@@ -43,7 +44,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     prisma.section.count(),
     prisma.category.count(),
     prisma.house.count(),
-    prisma.user.count({ where: { isActive: true } })
+    req.user.role === 'SUPER_ADMIN' ? prisma.user.count({ where: { isActive: true } }) : Promise.resolve(0),
+    prisma.staff.count({ where: { isDisabled: false } })
   ]);
 
   // Get recent students
@@ -59,7 +61,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     }
   });
 
-  // Calculate growth percentages (comparing to previous period)
+  // Calculate growth percentages
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -103,23 +105,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     const monthEnd = new Date(monthStart);
     monthEnd.setMonth(monthStart.getMonth() + 1);
 
-    const admissions = await prisma.student.count({
-      where: {
-        createdAt: {
-          gte: monthStart,
-          lt: monthEnd
-        }
-      }
-    });
-
-    const activeInMonth = await prisma.student.count({
-      where: {
-        createdAt: {
-          lte: monthEnd
-        },
-        isDisabled: false
-      }
-    });
+    const [admissions, activeInMonth] = await Promise.all([
+      prisma.student.count({
+        where: { createdAt: { gte: monthStart, lt: monthEnd } }
+      }),
+      prisma.student.count({
+        where: { createdAt: { lte: monthEnd }, isDisabled: false }
+      })
+    ]);
 
     monthlyData.push({
       name: monthStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -137,7 +130,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       totalSections,
       totalCategories,
       totalHouses,
-      totalUsers,
+      totalUsers: req.user.role === 'SUPER_ADMIN' ? totalUsers : undefined,
+      totalStaff: req.user.role !== 'SUPER_ADMIN' ? totalStaff : undefined,
       studentGrowth: `+${studentGrowth}%`,
       totalTeachers: 0, // Will be implemented with staff module
       totalRevenue: 0, // Will be implemented with fees module

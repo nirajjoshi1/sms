@@ -12,8 +12,17 @@ import {
   PanelLeftOpen,
   Check,
   User,
-  LogOut
+  LogOut,
+  Trash2,
+  Info,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  DollarSign,
+  FileText,
+  Calendar
 } from 'lucide-react';
+import api from '../../../lib/api';
 
 const Navbar = ({ 
   user, 
@@ -27,7 +36,12 @@ const Navbar = ({
   logout
 }) => {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  
   const profileRef = React.useRef(null);
+  const notificationsRef = React.useRef(null);
 
   // Handle click outside for profile dropdown
   React.useEffect(() => {
@@ -41,8 +55,149 @@ const Navbar = ({
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
+
+  // Handle click outside for notifications dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target) && !e.target.closest('.notifications-trigger')) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    if (isNotificationsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNotificationsOpen]);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('/notifications');
+      if (response.data?.success) {
+        setNotifications(response.data.data);
+        setUnreadCount(response.data.data.filter(n => !n.isRead).length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchNotifications();
+    // Poll notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await api.put('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/notifications/${id}`);
+      const deleted = notifications.find(n => n.id === id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      if (deleted && !deleted.isRead) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await api.delete('/notifications');
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to clear all notifications:", err);
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'admission':
+        return <User className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />;
+      case 'fee':
+        return <DollarSign className="w-3.5 h-3.5 text-blue-500" />;
+      case 'leave':
+        return <FileText className="w-3.5 h-3.5 text-amber-500" />;
+      case 'event':
+        return <Calendar className="w-3.5 h-3.5 text-purple-500" />;
+      case 'success':
+        return <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />;
+      case 'warning':
+        return <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />;
+      case 'error':
+        return <XCircle className="w-3.5 h-3.5 text-red-500 animate-bounce" />;
+      default:
+        return <Info className="w-3.5 h-3.5 text-sky-500" />;
+    }
+  };
+
+  const getIconBg = (type) => {
+    switch (type) {
+      case 'admission':
+        return 'bg-emerald-500/10 border border-emerald-500/20';
+      case 'fee':
+        return 'bg-blue-500/10 border border-blue-500/20';
+      case 'leave':
+        return 'bg-amber-500/10 border border-amber-500/20';
+      case 'event':
+        return 'bg-purple-500/10 border border-purple-500/20';
+      case 'success':
+        return 'bg-emerald-500/10 border border-emerald-500/20';
+      case 'warning':
+        return 'bg-amber-500/10 border border-amber-500/20';
+      case 'error':
+        return 'bg-red-500/10 border border-red-500/20';
+      default:
+        return 'bg-sky-500/10 border border-sky-500/20';
+    }
+  };
+
+  const formatTime = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  };
+
   return (
-    <header className="h-16 border-b border-border flex items-center px-6 justify-between flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-[100]">
+    <header className="h-16 border-b border-border flex items-center px-6 justify-between flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-30">
       <div className="flex items-center gap-3">
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -65,7 +220,112 @@ const Navbar = ({
       </div>
 
       <div className="flex items-center gap-2 relative">
-        <HeaderAction icon={<Bell />} />
+        {/* Live Notification Bell Trigger & Dropdown */}
+        <div className="relative" ref={notificationsRef}>
+          <button 
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className={`notifications-trigger w-9 h-9 flex items-center justify-center rounded-lg transition relative ${
+              isNotificationsOpen ? 'bg-accent text-accent-foreground shadow-inner' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[8px] font-extrabold flex items-center justify-center rounded-full ring-2 ring-background animate-in zoom-in duration-200 shadow-sm">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Popover */}
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-3 w-80 md:w-96 bg-card/95 border border-border rounded-2xl shadow-2xl z-[9999] p-4 animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-3">
+                <div>
+                  <h3 className="text-sm font-black text-foreground tracking-tight">Notifications</h3>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-85">
+                    {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {notifications.length > 0 && (
+                    <>
+                      <button 
+                        onClick={handleMarkAllAsRead} 
+                        className="text-[9px] font-bold text-primary hover:opacity-80 transition uppercase tracking-wider cursor-pointer"
+                      >
+                        Read All
+                      </button>
+                      <span className="text-[10px] text-border">|</span>
+                      <button 
+                        onClick={handleClearAll} 
+                        className="text-[9px] font-bold text-muted-foreground hover:text-destructive transition uppercase tracking-wider cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-1 scrollbar-thin flex flex-col">
+                {notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="w-10 h-10 rounded-xl bg-muted border border-border/40 flex items-center justify-center text-muted-foreground mb-2">
+                      <Bell className="w-5 h-5 opacity-40" />
+                    </div>
+                    <p className="text-xs font-bold text-foreground">All caught up!</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">No new notifications at this time.</p>
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <div 
+                      key={notification.id} 
+                      className={`group flex items-start gap-3 p-2.5 rounded-xl border transition-all ${
+                        notification.isRead 
+                          ? 'bg-card/40 border-border/30 opacity-70 hover:opacity-100 hover:border-border/60' 
+                          : 'bg-primary/5 border-primary/20 hover:bg-primary/10'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-lg flex-shrink-0 flex items-center justify-center ${getIconBg(notification.type)}`}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className={`text-xs font-bold truncate ${notification.isRead ? 'text-foreground/80' : 'text-foreground'}`}>
+                            {notification.title}
+                          </p>
+                          <span className="text-[9px] text-muted-foreground flex-shrink-0 font-bold font-mono">
+                            {formatTime(notification.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] leading-relaxed text-muted-foreground break-words font-medium">
+                          {notification.message}
+                        </p>
+                        
+                        <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {!notification.isRead && (
+                            <button 
+                              onClick={() => handleMarkAsRead(notification.id)}
+                              className="text-[9px] font-bold text-primary hover:opacity-85 transition cursor-pointer"
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => handleDelete(notification.id)}
+                            className="text-[9px] font-bold text-muted-foreground hover:text-destructive flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         
         <div className="relative">
           <button 
@@ -139,12 +399,6 @@ const Navbar = ({
     </header>
   );
 };
-
-const HeaderAction = ({ icon }) => (
-  <button className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition">
-    {React.cloneElement(icon, { className: "w-5 h-5" })}
-  </button>
-);
 
 const PreferencesPopover = ({ theme, setTheme }) => (
   <div className="settings-popover absolute right-0 mt-3 w-80 bg-card border border-border rounded-2xl shadow-2xl z-[9999] p-6 animate-in fade-in slide-in-from-top-2 duration-200">

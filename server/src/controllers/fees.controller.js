@@ -75,9 +75,9 @@ exports.getFeeGroups = asyncHandler(async (req, res) => {
 exports.createFeeGroup = asyncHandler(async (req, res) => {
     const { name, description } = req.body;
 
-    const existing = await prisma.feeGroup.findUnique({ where: { name } });
+    const existing = await prisma.feeGroup.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Fee group with this name already exists");
+        throw new ApiError(400, "Fee group with this name already exists in this school");
     }
 
     const group = await prisma.feeGroup.create({
@@ -120,9 +120,9 @@ exports.getFeeTypes = asyncHandler(async (req, res) => {
 exports.createFeeType = asyncHandler(async (req, res) => {
     const { name, code, description } = req.body;
 
-    const existing = await prisma.feeType.findUnique({ where: { code } });
+    const existing = await prisma.feeType.findFirst({ where: { code } });
     if (existing) {
-        throw new ApiError(400, "Fee type with this code already exists");
+        throw new ApiError(400, "Fee type with this code already exists in this school");
     }
 
     const type = await prisma.feeType.create({
@@ -229,9 +229,9 @@ exports.getFeeDiscounts = asyncHandler(async (req, res) => {
 exports.createFeeDiscount = asyncHandler(async (req, res) => {
     const { name, code, discountType, percentage, amount, usageLimit, expiryDate, description } = req.body;
 
-    const existing = await prisma.feeDiscount.findUnique({ where: { code } });
+    const existing = await prisma.feeDiscount.findFirst({ where: { code } });
     if (existing) {
-        throw new ApiError(400, "Discount code already exists");
+        throw new ApiError(400, "Discount code already exists in this school");
     }
 
     const discount = await prisma.feeDiscount.create({
@@ -352,6 +352,18 @@ exports.collectFee = asyncHandler(async (req, res) => {
             FeeType: { select: { name: true } }
         }
     });
+
+    // Trigger notification
+    try {
+        const { createNotification } = require('../utils/notification');
+        await createNotification({
+            title: "Fee Payment Collected",
+            message: `A fee payment of ${payment.netAmount} has been collected for student ${payment.Student?.firstName} ${payment.Student?.lastName || ''} (Admission No: ${payment.Student?.admissionNo}) via ${payment.paymentMethod}.`,
+            type: "fee"
+        });
+    } catch (err) {
+        console.error("Failed to trigger fee payment notification:", err);
+    }
 
     res.status(201).json(new ApiResponse(201, payment, "Fee collected successfully"));
 });

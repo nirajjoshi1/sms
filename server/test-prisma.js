@@ -1,3 +1,4 @@
+require('dotenv').config();
 const prisma = require('./src/config/prisma');
 
 async function testModels() {
@@ -20,7 +21,8 @@ async function testModels() {
         const result = await prisma[model].findFirst();
         console.log(`✅ ${model}: OK (${result ? 'has data' : 'empty'})`);
       } catch (error) {
-        console.log(`❌ ${model}: FAILED - ${error.message}`);
+        console.log(`❌ ${model}: FAILED -`);
+        console.error(error);
       }
     }
 

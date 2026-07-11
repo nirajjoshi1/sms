@@ -58,11 +58,7 @@ const Login = () => {
             </div>
           )}
 
-          {/* 
-            Aggressive Autofill Prevention:
-            Browsers often ignore 'off'. We use a combination of 'new-password', 
-            'one-time-code', and hidden dummy fields to trick the autofill engine.
-          */}
+       
           <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
             {/* Hidden honeypot fields to catch browser autofill */}
             <input type="text" style={{ display: 'none' }} name="prevent_autofill" autoComplete="off" />

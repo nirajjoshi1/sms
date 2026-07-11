@@ -39,6 +39,7 @@ server/prisma/db.sqlite-journal
 # File Uploads (if stored locally during dev)
 server/uploads/
 server/public/uploads/
+server/backups/
 
 # Optional npm cache directory
 .npm

@@ -82,7 +82,7 @@ exports.createSchoolWithAdmin = asyncHandler(async (req, res) => {
 exports.getAllSchools = asyncHandler(async (req, res) => {
     const schools = await prisma.school.findMany({
         include: {
-            admins: {
+            User: {
                 select: {
                     id: true,
                     name: true,

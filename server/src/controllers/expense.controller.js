@@ -20,9 +20,9 @@ exports.createExpenseHead = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Expense head name is required");
     }
 
-    const existing = await prisma.expenseHead.findUnique({ where: { name } });
+    const existing = await prisma.expenseHead.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Expense head with this name already exists");
+        throw new ApiError(400, "Expense head with this name already exists in this school");
     }
 
     const head = await prisma.expenseHead.create({

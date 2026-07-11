@@ -264,6 +264,19 @@ exports.createLeaveRequest = asyncHandler(async (req, res) => {
             LeaveType: { select: { name: true } }
         }
     });
+
+    // Trigger notification
+    try {
+        const { createNotification } = require('../utils/notification');
+        await createNotification({
+            title: "New Leave Application",
+            message: `Staff ${leave.Staff?.firstName} ${leave.Staff?.lastName || ''} has applied for ${leave.LeaveType?.name} leave from ${fromDate} to ${toDate}.`,
+            type: "leave"
+        });
+    } catch (err) {
+        console.error("Failed to trigger leave request notification:", err);
+    }
+
     res.status(201).json(new ApiResponse(201, leave, "Leave request submitted successfully"));
 });
 
@@ -283,6 +296,18 @@ exports.updateLeaveStatus = asyncHandler(async (req, res) => {
             LeaveType: { select: { name: true } }
         }
     });
+
+    // Trigger notification
+    try {
+        const { createNotification } = require('../utils/notification');
+        await createNotification({
+            title: `Leave Application ${status}`,
+            message: `Leave request for ${leave.Staff?.firstName} ${leave.Staff?.lastName || ''} has been ${status.toLowerCase()} by Admin.`,
+            type: "leave"
+        });
+    } catch (err) {
+        console.error("Failed to trigger leave status notification:", err);
+    }
 
     res.status(200).json(new ApiResponse(200, leave, `Leave request ${status.toLowerCase()} successfully`));
 });
@@ -322,9 +347,9 @@ exports.getDepartments = asyncHandler(async (req, res) => {
 
 exports.createDepartment = asyncHandler(async (req, res) => {
     const { name } = req.body;
-    const existing = await prisma.department.findUnique({ where: { name } });
+    const existing = await prisma.department.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Department already exists");
+        throw new ApiError(400, "Department already exists in this school");
     }
     const dept = await prisma.department.create({ data: { name } });
     res.status(201).json(new ApiResponse(201, dept, "Department created successfully"));
@@ -357,9 +382,9 @@ exports.getDesignations = asyncHandler(async (req, res) => {
 
 exports.createDesignation = asyncHandler(async (req, res) => {
     const { name } = req.body;
-    const existing = await prisma.designation.findUnique({ where: { name } });
+    const existing = await prisma.designation.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Designation already exists");
+        throw new ApiError(400, "Designation already exists in this school");
     }
     const desig = await prisma.designation.create({ data: { name } });
     res.status(201).json(new ApiResponse(201, desig, "Designation created successfully"));

@@ -178,9 +178,9 @@ exports.updateStaff = asyncHandler(async (req, res) => {
 
     // Check if staffId is being changed and if it conflicts
     if (staffId && staffId !== existingStaff.staffId) {
-        const duplicate = await prisma.staff.findUnique({ where: { staffId } });
+        const duplicate = await prisma.staff.findFirst({ where: { staffId } });
         if (duplicate) {
-            throw new ApiError(400, "Staff ID already exists");
+            throw new ApiError(400, "Staff ID already exists in this school");
         }
     }
 

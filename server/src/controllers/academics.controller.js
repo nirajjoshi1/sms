@@ -23,9 +23,9 @@ exports.createClass = asyncHandler(async (req, res) => {
     }
 
     // Check if class already exists
-    const existing = await prisma.class.findUnique({ where: { name } });
+    const existing = await prisma.class.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Class with this name already exists");
+        throw new ApiError(400, "Class with this name already exists in this school");
     }
 
     const connectSections = sectionIds ? sectionIds.map(id => ({ id })) : [];
@@ -87,9 +87,9 @@ exports.createSection = asyncHandler(async (req, res) => {
     }
 
     // Check if section already exists
-    const existing = await prisma.section.findUnique({ where: { name } });
+    const existing = await prisma.section.findFirst({ where: { name } });
     if (existing) {
-        throw new ApiError(400, "Section with this name already exists");
+        throw new ApiError(400, "Section with this name already exists in this school");
     }
 
     const newSection = await prisma.section.create({ data: { name } });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, Database, Trash2, Calendar, FileArchive } from 'lucide-react';
+import { Download, Database, Trash2, Calendar, FileArchive } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 
@@ -7,7 +7,6 @@ const BackupSetting = () => {
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [restoring, setRestoring] = useState(false);
 
   const fetchBackups = async () => {
     try {
@@ -60,23 +59,6 @@ const BackupSetting = () => {
     }
   };
 
-  const handleRestoreBackup = async (id) => {
-    if (!window.confirm('WARNING: This will restore the database to this backup point. All current data will be replaced. Are you sure?')) return;
-
-    try {
-      setRestoring(true);
-      await api.post(`/settings/backups/${id}/restore`);
-      toast.success('Database restored successfully');
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to restore backup');
-    } finally {
-      setRestoring(false);
-    }
-  };
-
   const handleDeleteBackup = async (id) => {
     if (!window.confirm('Are you sure you want to delete this backup?')) return;
 
@@ -123,10 +105,10 @@ const BackupSetting = () => {
           <div>
             <h3 className="text-xs font-bold text-yellow-600 mb-1">Important Information</h3>
             <ul className="text-[10px] text-yellow-600/90 space-y-1">
-              <li>• Backups include all database tables and data</li>
-              <li>• Restoring a backup will replace all current data</li>
-              <li>• Always download and store backups externally</li>
-              <li>• Automatic backups are recommended before major updates</li>
+              <li>Backups include database records exported as JSON</li>
+              <li>Download and store backups externally</li>
+              <li>Automatic restore is disabled to protect production data</li>
+              <li>Use a verified manual restore process for production incidents</li>
             </ul>
           </div>
         </div>
@@ -203,14 +185,6 @@ const BackupSetting = () => {
                           <Download className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button
-                          onClick={() => handleRestoreBackup(backup.id)}
-                          disabled={restoring}
-                          className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
-                          title="Restore"
-                        >
-                          <Upload className="w-3.5 h-3.5 text-primary" />
-                        </button>
-                        <button
                           onClick={() => handleDeleteBackup(backup.id)}
                           className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"
                           title="Delete"
@@ -241,13 +215,14 @@ const BackupSetting = () => {
               type="checkbox"
               id="autoBackup"
               className="w-4 h-4 rounded border-border"
+              disabled
             />
             <label htmlFor="autoBackup" className="text-xs font-medium text-foreground flex-1">
-              Enable Daily Automatic Backups (2:00 AM)
+              Enable Daily Automatic Backups (coming soon)
             </label>
           </div>
           <p className="text-[10px] text-muted-foreground mt-2 ml-6">
-            Automatic backups will be stored for 30 days before being deleted.
+            Automatic scheduling needs a background worker or database provider backup schedule.
           </p>
         </div>
       </div>

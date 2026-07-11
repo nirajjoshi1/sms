@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import Login from '../pages/auth/Login';
+import LandingPage from '../pages/public/LandingPage';
 import Schools from '../pages/dashboard/Schools';
 import Dashboard from '../pages/dashboard/Dashboard';
 import MainLayout from '../components/layout/MainLayout';
@@ -24,6 +25,14 @@ import AssignClassTeacher from '../pages/academics/AssignClassTeacher';
 import ClassTimetable from '../pages/academics/ClassTimetable';
 import TeachersTimetable from '../pages/academics/TeachersTimetable';
 import PromoteStudents from '../pages/academics/PromoteStudents';
+import TeacherDashboard from '../pages/teacher/TeacherDashboard';
+import MySchedule from '../pages/teacher/MySchedule';
+import MyClasses from '../pages/teacher/MyClasses';
+import TakeAttendance from '../pages/teacher/TakeAttendance';
+import AttendanceReport from '../pages/teacher/AttendanceReport';
+import Homework from '../pages/teacher/Homework';
+import MarksEntry from '../pages/teacher/MarksEntry';
+import ClassOverview from '../pages/teacher/ClassOverview';
 
 // HR imports
 import StaffDirectory from '../pages/hr/StaffDirectory';
@@ -101,24 +110,34 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Public route */}
+      {/* Public routes */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
       />
 
+      {/* Landing page - shown to unauthenticated visitors */}
+      <Route
+        path="/home"
+        element={<LandingPage />}
+      />
+
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected routes */}
+      {/* Protected routes - authenticated users go to dashboard at / */}
       <Route
         path="/"
         element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
+          isAuthenticated ? (
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          ) : (
+            <LandingPage />
+          )
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={isAuthenticated ? <Dashboard /> : null} />
 
         {/* Student Routes */}
         <Route path="students" element={<StudentList />} />
@@ -207,6 +226,16 @@ const AppRoutes = () => {
         <Route path="settings/payment" element={<PaymentSetting />} />
         <Route path="settings/print" element={<PrintSetting />} />
         <Route path="settings/backup" element={<BackupSetting />} />
+
+        {/* Teacher Portal Routes */}
+        <Route path="teacher/dashboard" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="teacher/schedule" element={<ProtectedRoute allowedRoles={['TEACHER']}><MySchedule /></ProtectedRoute>} />
+        <Route path="teacher/classes" element={<ProtectedRoute allowedRoles={['TEACHER']}><MyClasses /></ProtectedRoute>} />
+        <Route path="teacher/attendance" element={<ProtectedRoute allowedRoles={['TEACHER']}><TakeAttendance /></ProtectedRoute>} />
+        <Route path="teacher/attendance/report" element={<ProtectedRoute allowedRoles={['TEACHER']}><AttendanceReport /></ProtectedRoute>} />
+        <Route path="teacher/homework" element={<ProtectedRoute allowedRoles={['TEACHER']}><Homework /></ProtectedRoute>} />
+        <Route path="teacher/marks" element={<ProtectedRoute allowedRoles={['TEACHER']}><MarksEntry /></ProtectedRoute>} />
+        <Route path="teacher/class-overview" element={<ProtectedRoute allowedRoles={['TEACHER']}><ClassOverview /></ProtectedRoute>} />
 
         {/* Super Admin Only Routes */}
         <Route 
