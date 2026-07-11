@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function CustomModal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
-      <div className="flex min-h-full items-start justify-center p-4 sm:p-6 pt-24 pb-10 text-center">
-        <div className={cn("bg-card border border-border rounded-xl shadow-xl w-full text-left flex flex-col max-h-[calc(100vh-8rem)]", maxWidth)}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 z-[99999] overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
+        <div className={cn("bg-card border border-border rounded-xl shadow-xl w-full text-left flex flex-col max-h-[90vh]", maxWidth)}>
           <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0 bg-card z-10 rounded-t-xl">
             <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
               {title}
@@ -22,6 +23,7 @@ export default function CustomModal({ isOpen, onClose, title, children, maxWidth
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
