@@ -23,11 +23,13 @@ import {
   Calendar
 } from 'lucide-react';
 import api from '../../../lib/api';
+import { FONT_OPTIONS, THEME_PRESETS } from '../../../context/ThemeContext';
 
 const Navbar = ({ 
   user, 
   theme, 
   setTheme, 
+  themePreferences,
   isSidebarCollapsed, 
   setIsSidebarCollapsed, 
   setIsSpotlightOpen,
@@ -339,7 +341,7 @@ const Navbar = ({
 
           {/* Preferences Popover */}
           {isSettingsOpen && (
-            <PreferencesPopover theme={theme} setTheme={setTheme} />
+            <PreferencesPopover theme={theme} setTheme={setTheme} preferences={themePreferences} />
           )}
         </div>
 
@@ -400,8 +402,8 @@ const Navbar = ({
   );
 };
 
-const PreferencesPopover = ({ theme, setTheme }) => (
-  <div className="settings-popover absolute right-0 mt-3 w-80 bg-card border border-border rounded-2xl shadow-2xl z-[9999] p-6 animate-in fade-in slide-in-from-top-2 duration-200">
+const PreferencesPopover = ({ theme, setTheme, preferences }) => (
+  <div className="settings-popover absolute right-0 mt-3 w-80 max-h-[calc(100vh-5rem)] overflow-y-auto bg-card border border-border rounded-2xl shadow-2xl z-[9999] p-6 animate-in fade-in slide-in-from-top-2 duration-200">
     <div className="mb-6">
       <h3 className="text-lg font-bold text-foreground">Preferences</h3>
       <p className="text-xs text-muted-foreground">Customize your dashboard layout preferences.</p>
@@ -411,22 +413,24 @@ const PreferencesPopover = ({ theme, setTheme }) => (
       {/* Theme Preset */}
       <div>
         <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Theme Preset</label>
-        <button className="w-full bg-muted border border-input rounded-lg px-3 py-2 flex items-center justify-between group">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-foreground rounded-full"></div>
-            <span className="font-medium text-foreground">Default</span>
-          </div>
-          <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition" />
-        </button>
+        <div className="relative">
+        <select aria-label="Theme preset" value={preferences.preset} onChange={(e) => preferences.setPreset(e.target.value)} className="w-full appearance-none bg-muted border border-input rounded-lg pl-9 pr-9 py-2.5 font-medium text-foreground outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+          {THEME_PRESETS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ring-1 ring-black/10" style={{ background: THEME_PRESETS.find(item => item.id === preferences.preset)?.color }} />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        </div>
       </div>
 
       {/* Fonts */}
       <div>
         <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Fonts</label>
-        <button className="w-full bg-muted border border-input rounded-lg px-3 py-2 flex items-center justify-between group">
-          <span className="font-medium text-foreground">Geist</span>
-          <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition" />
-        </button>
+        <div className="relative">
+          <select aria-label="Dashboard font" value={preferences.font} onChange={(e) => preferences.setFont(e.target.value)} style={{ fontFamily: `'${preferences.font}', system-ui, sans-serif` }} className="w-full appearance-none bg-muted border border-input rounded-lg px-3 pr-9 py-2.5 font-medium text-foreground outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+            {FONT_OPTIONS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        </div>
       </div>
 
       {/* Theme Mode */}
@@ -440,7 +444,7 @@ const PreferencesPopover = ({ theme, setTheme }) => (
       </div>
 
       <div className="pt-4 border-t border-border">
-        <button className="w-full py-2.5 rounded-xl border border-border text-foreground font-bold hover:bg-accent transition text-xs">
+        <button onClick={preferences.restoreDefaults} className="w-full py-2.5 rounded-xl border border-border text-foreground font-bold hover:bg-accent transition text-xs">
           Restore Defaults
         </button>
       </div>
