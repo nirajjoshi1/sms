@@ -105,8 +105,19 @@ const Unauthorized = () => (
   </div>
 );
 
+const AuthLoadingScreen = () => (
+  <div className="flex items-center justify-center h-screen bg-background">
+    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+      <div className="w-9 h-9 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm font-medium">Verifying your session...</p>
+    </div>
+  </div>
+);
+
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return <AuthLoadingScreen />;
 
   return (
     <Routes>
