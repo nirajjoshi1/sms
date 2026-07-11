@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingDown, Calendar, FileText } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -172,8 +173,7 @@ const AddExpense = () => {
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg pl-9 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"

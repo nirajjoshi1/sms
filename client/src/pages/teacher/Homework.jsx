@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Calendar, Plus, Trash, Users, Save, CheckCircle, FileText, ExternalLink, X, ClipboardList, Pencil } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const Homework = () => {
   const [classes, setClasses] = useState([]);
@@ -549,8 +550,7 @@ const Homework = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Due Date *</label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={newHomework.dueDate}
                     min={editingHomework ? undefined : new Date().toISOString().split('T')[0]}
                     onChange={(e) => setNewHomework({ ...newHomework, dueDate: e.target.value })}

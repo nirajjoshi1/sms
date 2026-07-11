@@ -3,6 +3,7 @@ import { Calendar, Check, X, Clock, Users, Search } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const StaffAttendance = () => {
   const [staff, setStaff] = useState([]);
@@ -141,8 +142,7 @@ const StaffAttendance = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Date *</label>
-            <input
-              type="date"
+            <DatePicker
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}

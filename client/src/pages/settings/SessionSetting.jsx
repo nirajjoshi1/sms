@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Save, Calendar, Check } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
 
 
 const SessionSetting = () => {
@@ -243,8 +244,7 @@ const SessionSetting = () => {
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
                     Start Date *
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -256,8 +256,7 @@ const SessionSetting = () => {
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
                     End Date *
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"

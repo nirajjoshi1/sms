@@ -4,6 +4,7 @@ import { Search, Filter, Download, Calendar, ChevronLeft, ChevronRight, Plus, Ed
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const SearchIncome = () => {
   const navigate = useNavigate();
@@ -153,8 +154,7 @@ const SearchIncome = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">From Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={dateFrom}
               onChange={(e) => {
                 setDateFrom(e.target.value);
@@ -166,8 +166,7 @@ const SearchIncome = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">To Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={dateTo}
               onChange={(e) => {
                 setDateTo(e.target.value);

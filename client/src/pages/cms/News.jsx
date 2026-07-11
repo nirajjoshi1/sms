@@ -4,6 +4,7 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import ImageUpload from '../../components/common/ImageUpload';
 import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
 
 
 const News = () => {
@@ -245,8 +246,7 @@ const News = () => {
                   <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
                     Publish Date *
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={formData.publishDate}
                     onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
                     className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Download } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { DatePicker } from '../../components/ui/date-picker';
 
 const TransferCertificate = () => {
   const [students, setStudents] = useState([]);
@@ -84,8 +85,7 @@ const TransferCertificate = () => {
 
             <div className="space-y-1">
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Leaving Date *</label>
-              <input
-                type="date"
+              <DatePicker
                 value={formData.leavingDate}
                 onChange={(e) => setFormData({...formData, leavingDate: e.target.value})}
                 className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ClipboardList, Calendar, Users, Save } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const TakeAttendance = () => {
   const [searchParams] = useSearchParams();
@@ -181,8 +182,7 @@ const TakeAttendance = () => {
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Date</label>
             <div className="flex items-center gap-2 border border-border rounded-lg bg-muted/30 h-9 px-2.5">
               <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-              <input
-                type="date"
+              <DatePicker
                 value={date}
                 max={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDate(e.target.value)}

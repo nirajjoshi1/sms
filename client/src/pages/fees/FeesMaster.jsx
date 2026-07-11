@@ -4,6 +4,7 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { DatePicker } from "@/components/ui/date-picker";
 
 
 const FeesMaster = () => {
@@ -344,8 +345,7 @@ const FeesMaster = () => {
 
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Due Date</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.dueDate}
                   onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                   className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
