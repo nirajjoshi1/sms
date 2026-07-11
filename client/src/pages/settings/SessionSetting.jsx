@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, Calendar, Check } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import CustomModal from '../../components/ui/CustomModal';
+
 
 const SessionSetting = () => {
   const [sessions, setSessions] = useState([]);
@@ -219,17 +221,7 @@ const SessionSetting = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingItem ? 'Edit Session' : 'Add Session'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingItem ? 'Edit Session' : 'Add Session'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
@@ -304,8 +296,7 @@ const SessionSetting = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Edit2, Trash2, Calendar, Clock } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import CustomModal from '../../components/ui/CustomModal';
+
 
 const ClassTimetable = () => {
   const [timetables, setTimetables] = useState([]);
@@ -348,17 +350,7 @@ const ClassTimetable = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-3">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Day *</label>
@@ -479,8 +471,7 @@ const ClassTimetable = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );

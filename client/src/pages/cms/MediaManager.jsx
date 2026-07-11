@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, FileImage, FileVideo, FileText, File } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import CustomModal from '../../components/ui/CustomModal';
+
 
 const MediaManager = () => {
   const [media, setMedia] = useState([]);
@@ -224,17 +226,7 @@ const MediaManager = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                {editingItem ? 'Edit Media' : 'Add Media'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-muted rounded">
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-
+        <CustomModal isOpen={true} onClose={closeModal} title={editingItem ? 'Edit Media' : 'Add Media'} maxWidth="max-w-2xl">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
@@ -299,8 +291,7 @@ const MediaManager = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </CustomModal>
       )}
     </div>
   );

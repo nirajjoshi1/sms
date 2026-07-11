@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Briefcase } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import CustomModal from '../../components/ui/CustomModal';
 
 const Designation = () => {
   const [designations, setDesignations] = useState([]);
@@ -115,27 +116,20 @@ const Designation = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full">
-            <div className="px-4 py-3 border-b border-border">
-              <h3 className="text-[11px] font-bold uppercase">{editingItem ? 'Edit' : 'Add'} Designation</h3>
-            </div>
-            <form onSubmit={handleSubmit} className="p-4 space-y-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Name *</label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({name: e.target.value})} placeholder="e.g. Principal" className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs" required />
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-9 bg-muted rounded-lg text-[10px] font-bold">Cancel</button>
-                <button type="submit" disabled={submitting} className="flex-1 h-9 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold disabled:opacity-50">
-                  {submitting ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
+      <CustomModal isOpen={showModal} onClose={() => setShowModal(false)} title={editingItem ? 'Edit Designation' : 'Add Designation'} maxWidth="max-w-md">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Name *</label>
+            <input type="text" value={formData.name} onChange={(e) => setFormData({name: e.target.value})} placeholder="e.g. Principal" className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs" required />
           </div>
-        </div>
-      )}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-9 bg-muted rounded-lg text-[10px] font-bold">Cancel</button>
+            <button type="submit" disabled={submitting} className="flex-1 h-9 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold disabled:opacity-50">
+              {submitting ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </CustomModal>
     </div>
   );
 };
