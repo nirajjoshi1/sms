@@ -219,7 +219,7 @@ const Gallery = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <CustomModal isOpen={true} onClose={closeModal} title={editingItem ? 'Edit Gallery Image' : 'Add Gallery Image'} maxWidth="max-w-2xl">
+        <CustomModal isOpen={true} onClose={closeModal} title={editingItem ? 'Edit Gallery Image' : 'Add Gallery Image'} maxWidth="max-w-md">
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
