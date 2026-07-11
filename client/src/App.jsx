@@ -6,12 +6,14 @@ import { CacheProvider } from "./context/CacheContext";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { Toaster } from 'sonner';
+import FormKeyboardNavigation from './components/common/FormKeyboardNavigation';
 
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <ThemeProvider>
+          <FormKeyboardNavigation />
           <CacheProvider>
             <AuthProvider>
               <AppRoutes />
