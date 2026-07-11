@@ -14,9 +14,16 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Only redirect if it's a 401 and the request wasn't the initial /auth/me check
     if (error.response?.status === 401) {
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      const isAuthMe = error.config?.url?.includes('/auth/me');
+      const isAlreadyOnLogin = window.location.pathname === '/login';
+      
+      // If we aren't already on the login page, and it wasn't just a background session check, redirect
+      if (!isAuthMe && !isAlreadyOnLogin) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
