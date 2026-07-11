@@ -5,7 +5,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const { errorHandler } = require("./src/middleware/errorHandler");
-const { verifyJWT } = require("./src/middleware/auth.middleware");
+const { verifyJWT, requireTenantUser } = require("./src/middleware/auth.middleware");
 
 // Import routes
 const authRoutes = require("./src/routes/auth.routes");
@@ -144,23 +144,23 @@ app.use(verifyJWT);
 app.use("/api/v1", conditionalApiLimiter);
 
 // Protected API Routes
-app.use("/api/v1/students", studentRoutes);
-app.use("/api/v1/staff", staffRoutes);
-app.use("/api/v1/academics", academicsRoutes);
-app.use("/api/v1/student-setup", studentSetupRoutes);
-app.use("/api/v1/hr", hrRoutes);
-app.use("/api/v1/settings", settingsRoutes);
-app.use("/api/v1/finance", financeRoutes);
-app.use("/api/v1/certificates", certificateRoutes);
-app.use("/api/v1/fees", feesRoutes);
-app.use("/api/v1/income", incomeRoutes);
-app.use("/api/v1/expenses", expenseRoutes);
-app.use("/api/v1/cms", cmsRoutes);
+app.use("/api/v1/students", requireTenantUser, studentRoutes);
+app.use("/api/v1/staff", requireTenantUser, staffRoutes);
+app.use("/api/v1/academics", requireTenantUser, academicsRoutes);
+app.use("/api/v1/student-setup", requireTenantUser, studentSetupRoutes);
+app.use("/api/v1/hr", requireTenantUser, hrRoutes);
+app.use("/api/v1/settings", requireTenantUser, settingsRoutes);
+app.use("/api/v1/finance", requireTenantUser, financeRoutes);
+app.use("/api/v1/certificates", requireTenantUser, certificateRoutes);
+app.use("/api/v1/fees", requireTenantUser, feesRoutes);
+app.use("/api/v1/income", requireTenantUser, incomeRoutes);
+app.use("/api/v1/expenses", requireTenantUser, expenseRoutes);
+app.use("/api/v1/cms", requireTenantUser, cmsRoutes);
 app.use("/api/v1/schools", schoolRoutes);
-app.use("/api/v1/upload", uploadRoutes);
+app.use("/api/v1/upload", requireTenantUser, uploadRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
-app.use("/api/v1/teacher", teacherRoutes);
+app.use("/api/v1/teacher", requireTenantUser, teacherRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

@@ -92,6 +92,24 @@ exports.requireSchoolContext = (req, res, next) => {
     next();
 };
 
+// Tenant application routes must never be accessible to the platform-level
+// Super Admin. Super Admins manage schools and platform users only.
+exports.requireTenantUser = (req, res, next) => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    if (req.user.role === 'SUPER_ADMIN') {
+        throw new ApiError(403, "Super Admin cannot access school tenant routes");
+    }
+
+    if (!req.user.schoolId) {
+        throw new ApiError(403, "Access denied - No school context found for user");
+    }
+
+    next();
+};
+
 // ==========================================
 // Ownership / Teacher Assignment Middleware (Base)
 // ==========================================
