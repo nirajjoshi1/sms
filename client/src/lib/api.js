@@ -10,13 +10,17 @@ const api = axios.create({
 
 // Automatically attach token from localStorage as fallback removed since we are using HttpOnly cookies.
 
-// Handle 401 globally — redirect to login
+// Notify the auth provider when an established session expires. Authentication
+// endpoints manage their own 401 responses and must not trigger hard redirects.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const requestUrl = error.config?.url || '';
+      const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/me');
+      if (!isAuthRequest) {
+        window.dispatchEvent(new Event('auth:unauthorized'));
+      }
     }
     return Promise.reject(error);
   }
