@@ -8,6 +8,8 @@ const prisma = require('../config/prisma');
 // =====================================
 exports.getCertificateTemplates = asyncHandler(async (req, res) => {
     const templates = await prisma.certificateTemplate.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     
@@ -44,7 +46,7 @@ exports.createCertificateTemplate = asyncHandler(async (req, res) => {
     const { name, bodyText, headerText, footerText, schoolId } = req.body;
     
     const template = await prisma.certificateTemplate.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             bodyText,
             headerCenterText: headerText,
@@ -122,7 +124,7 @@ exports.getIdCardTemplateById = asyncHandler(async (req, res) => {
 
 exports.createIdCardTemplate = asyncHandler(async (req, res) => {
     const template = await prisma.idCardTemplate.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, template, "ID card template created successfully"));
 });

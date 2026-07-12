@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const hrController = require('../controllers/hr.controller');
-const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 const { validate } = require('../middleware/validate.middleware');
 const staffValidation = require('../validations/staff.validation');
 
@@ -49,7 +50,7 @@ router.route('/leave-requests/:id')
 // Teacher rating routes
 router.route('/teacher-ratings')
     .get(authorizeRoles('ADMIN'), hrController.getTeacherRatings)
-    .post(authorizeRoles('ADMIN'), hrController.createTeacherRating);
+    .post(authorizeRoles('ADMIN'), validate(staffValidation.createTeacherRating), hrController.createTeacherRating);
 
 // Department routes
 router.route('/departments')

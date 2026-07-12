@@ -77,7 +77,7 @@ exports.createUser = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             email,
             password: hashedPassword,

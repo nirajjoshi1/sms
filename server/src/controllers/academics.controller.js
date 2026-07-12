@@ -10,6 +10,7 @@ const { logAudit } = require('../utils/audit');
 // =====================================
 exports.getClasses = asyncHandler(async (req, res) => {
     const classes = await prisma.class.findMany({
+        where: { schoolId: req.user.schoolId },
         include: { Section: true },
         orderBy: { name: 'asc' }
     });
@@ -24,14 +25,14 @@ exports.createClass = asyncHandler(async (req, res) => {
     }
 
     // Check if class already exists
-    const existing = await prisma.class.findFirst({ where: { name } });
+    const existing = await prisma.class.findFirst({ where: { name, schoolId: req.user.schoolId } });
     if (existing) {
         throw new ApiError(400, "Class with this name already exists in this school");
     }
 
     const connectSections = sectionIds ? sectionIds.map(id => ({ id })) : [];
     const newClass = await prisma.class.create({
-        data: { name, Section: { connect: connectSections } },
+        data: { schoolId: req.user.schoolId, name, schoolId: req.user.schoolId, Section: { connect: connectSections } },
         include: { Section: true }
     });
     res.status(201).json(new ApiResponse(201, newClass, "Class created successfully"));
@@ -41,13 +42,13 @@ exports.deleteClass = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     // Check if class has students
-    const studentsCount = await prisma.student.count({ where: { classId: id } });
+    const studentsCount = await prisma.student.count({ where: { classId: id, schoolId: req.user.schoolId } });
     if (studentsCount > 0) {
         throw new ApiError(400, `Cannot delete class. ${studentsCount} students are enrolled in this class`);
     }
 
     const classExists = await prisma.class.findUnique({ where: { id } });
-    if (!classExists) {
+    if (!classExists || classExists.schoolId !== req.user.schoolId) {
         throw new ApiError(404, "Class not found");
     }
 
@@ -58,6 +59,11 @@ exports.deleteClass = asyncHandler(async (req, res) => {
 exports.updateClass = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, sectionIds } = req.body;
+    
+    const classExists = await prisma.class.findUnique({ where: { id } });
+    if (!classExists || classExists.schoolId !== req.user.schoolId) {
+        throw new ApiError(404, "Class not found");
+    }
     
     const updatedClass = await prisma.class.update({
         where: { id },
@@ -76,7 +82,7 @@ exports.updateClass = asyncHandler(async (req, res) => {
 // Section Controllers
 // =====================================
 exports.getSections = asyncHandler(async (req, res) => {
-    const sections = await prisma.section.findMany({ orderBy: { name: 'asc' }});
+    const sections = await prisma.section.findMany({ where: { schoolId: req.user.schoolId }, orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, sections, "Sections fetched successfully"));
 });
 
@@ -88,12 +94,12 @@ exports.createSection = asyncHandler(async (req, res) => {
     }
 
     // Check if section already exists
-    const existing = await prisma.section.findFirst({ where: { name } });
+    const existing = await prisma.section.findFirst({ where: { name, schoolId: req.user.schoolId } });
     if (existing) {
         throw new ApiError(400, "Section with this name already exists in this school");
     }
 
-    const newSection = await prisma.section.create({ data: { name } });
+    const newSection = await prisma.section.create({ data: { schoolId: req.user.schoolId, name, schoolId: req.user.schoolId } });
     res.status(201).json(new ApiResponse(201, newSection, "Section created successfully"));
 });
 
@@ -101,13 +107,13 @@ exports.deleteSection = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     // Check if section has students
-    const studentsCount = await prisma.student.count({ where: { sectionId: id } });
+    const studentsCount = await prisma.student.count({ where: { sectionId: id, schoolId: req.user.schoolId } });
     if (studentsCount > 0) {
         throw new ApiError(400, `Cannot delete section. ${studentsCount} students are enrolled in this section`);
     }
 
     const sectionExists = await prisma.section.findUnique({ where: { id } });
-    if (!sectionExists) {
+    if (!sectionExists || sectionExists.schoolId !== req.user.schoolId) {
         throw new ApiError(404, "Section not found");
     }
 
@@ -118,6 +124,11 @@ exports.deleteSection = asyncHandler(async (req, res) => {
 exports.updateSection = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
+
+    const sectionExists = await prisma.section.findUnique({ where: { id } });
+    if (!sectionExists || sectionExists.schoolId !== req.user.schoolId) {
+        throw new ApiError(404, "Section not found");
+    }
     const updatedSection = await prisma.section.update({
         where: { id },
         data: { name }
@@ -129,14 +140,15 @@ exports.updateSection = asyncHandler(async (req, res) => {
 // Subject Controllers
 // =====================================
 exports.getSubjects = asyncHandler(async (req, res) => {
-    const subjects = await prisma.subject.findMany({ orderBy: { name: 'asc' }});
+    const subjects = await prisma.subject.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, subjects, "Subjects fetched successfully"));
 });
 
 exports.createSubject = asyncHandler(async (req, res) => {
     const { name, type, code } = req.body;
     const subject = await prisma.subject.create({
-        data: { name, type, code }
+        data: { schoolId: req.user.schoolId, name, type, code }
     });
     res.status(201).json(new ApiResponse(201, subject, "Subject created successfully"));
 });
@@ -171,6 +183,8 @@ exports.deleteSubject = asyncHandler(async (req, res) => {
 // =====================================
 exports.getSubjectGroups = asyncHandler(async (req, res) => {
     const groups = await prisma.subjectGroup.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             Class: { select: { name: true }},
             Section: { select: { name: true }},
@@ -186,7 +200,7 @@ exports.createSubjectGroup = asyncHandler(async (req, res) => {
     const connectSubjects = subjectIds ? subjectIds.map(id => ({ id })) : [];
 
     const group = await prisma.subjectGroup.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name, description, classId, sectionId,
             Subject: { connect: connectSubjects }
         },
@@ -224,6 +238,8 @@ exports.deleteSubjectGroup = asyncHandler(async (req, res) => {
 // =====================================
 exports.getClassTeachers = asyncHandler(async (req, res) => {
     const classTeachers = await prisma.classTeacher.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             Class: { select: { name: true }},
             Section: { select: { name: true }},
@@ -350,7 +366,7 @@ exports.createTimetable = asyncHandler(async (req, res) => {
     }
 
     const timetable = await prisma.timetable.create({
-        data: { dayOfWeek, startTime, endTime, roomNo, classId, sectionId, subjectId, staffId },
+        data: { schoolId: req.user.schoolId, dayOfWeek, startTime, endTime, roomNo, classId, sectionId, subjectId, staffId },
         include: {
             Class: { select: { name: true } },
             Section: { select: { name: true } },
@@ -484,7 +500,7 @@ exports.promoteStudents = asyncHandler(async (req, res) => {
         for (const student of students) {
             // Log history for the session they are leaving/completing
             await tx.studentHistory.create({
-                data: {
+                data: { schoolId: req.user.schoolId,
                     studentId: student.id,
                     classId: student.classId,
                     sectionId: student.sectionId,

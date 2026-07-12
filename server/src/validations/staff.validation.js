@@ -88,6 +88,14 @@ const createDesignation = {
     }).strict()
 };
 
+const createTeacherRating = {
+    body: z.object({
+        teacherId: z.string().uuid("Invalid Teacher ID"),
+        rating: z.number().min(1).max(5),
+        comment: z.string().optional().nullable()
+    }).strict()
+};
+
 module.exports = {
     addStaff,
     updateStaff,
@@ -97,5 +105,6 @@ module.exports = {
     createLeaveRequest,
     updateLeaveStatus,
     createDepartment,
-    createDesignation
+    createDesignation,
+    createTeacherRating
 };

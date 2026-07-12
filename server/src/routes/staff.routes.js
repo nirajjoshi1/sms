@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const staffController = require('../controllers/staff.controller');
-const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { verifyJWT, requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 const upload = require('../middleware/upload.middleware');
 const { validate } = require('../middleware/validate.middleware');
 const staffValidation = require('../validations/staff.validation');
@@ -11,27 +12,27 @@ router.use(verifyJWT);
 router.use(requireSchoolContext);
 
 // Get all staff
-router.get('/', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getStaff);
+router.get('/', requirePermission(PERMISSIONS.STAFF_READ), staffController.getStaff);
 
 // Get disabled staff
-router.get('/disabled', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getDisabledStaff);
+router.get('/disabled', requirePermission(PERMISSIONS.STAFF_READ), staffController.getDisabledStaff);
 
 // Add new staff (with photo upload)
 router.post(
     '/add',
-    authorizeRoles('SUPER_ADMIN', 'ADMIN'),
+    requirePermission(PERMISSIONS.STAFF_MANAGE),
     upload.single('photo'),
     validate(staffValidation.addStaff),
     staffController.addStaff
 );
 
 // Get staff details by ID
-router.get('/:id', authorizeRoles('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'), staffController.getStaffDetails);
+router.get('/:id', requirePermission(PERMISSIONS.STAFF_READ), staffController.getStaffDetails);
 
 // Update staff (with photo upload)
 router.put(
     '/:id',
-    authorizeRoles('SUPER_ADMIN', 'ADMIN'),
+    requirePermission(PERMISSIONS.STAFF_MANAGE),
     upload.single('photo'),
     validate(staffValidation.updateStaff),
     staffController.updateStaff
@@ -40,21 +41,21 @@ router.put(
 // Delete staff
 router.delete(
     '/:id',
-    authorizeRoles('SUPER_ADMIN', 'ADMIN'),
+    requirePermission(PERMISSIONS.STAFF_MANAGE),
     staffController.deleteStaff
 );
 
 // Toggle staff status (disable/enable)
 router.patch(
     '/:id/status',
-    authorizeRoles('SUPER_ADMIN', 'ADMIN'),
+    requirePermission(PERMISSIONS.STAFF_MANAGE),
     staffController.toggleStaffStatus
 );
 
 // Bulk delete staff
 router.post(
     '/bulk-delete',
-    authorizeRoles('SUPER_ADMIN', 'ADMIN'),
+    requirePermission(PERMISSIONS.STAFF_MANAGE),
     staffController.bulkDeleteStaff
 );
 

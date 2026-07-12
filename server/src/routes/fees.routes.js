@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const feesController = require('../controllers/fees.controller');
-const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 const { validate } = require('../middleware/validate.middleware');
 const feesValidation = require('../validations/fees.validation');
 
@@ -54,16 +55,16 @@ router.route('/discounts/:id')
 // Fee reminder routes
 router.route('/reminders')
     .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.getFeeReminders)
-    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.createFeeReminder);
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeReminder), feesController.createFeeReminder);
 
 router.route('/reminders/:id')
-    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.updateFeeReminder)
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.updateFeeReminder), feesController.updateFeeReminder)
     .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeReminder);
 
 // Fee collection routes
 router.post('/collect', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), validate(feesValidation.collectFee), feesController.collectFee);
 router.get('/payments', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.searchFeePayments);
 router.get('/due', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getDueFees);
-router.post('/carry-forward', authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.carryForwardFees);
+router.post('/carry-forward', authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.carryForwardFees), feesController.carryForwardFees);
 
 module.exports = router;

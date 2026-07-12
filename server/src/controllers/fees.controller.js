@@ -37,7 +37,7 @@ exports.createOfflineBankPayment = asyncHandler(async (req, res) => {
     const requestId = `REQ-${Date.now()}`;
 
     const payment = await prisma.offlineBankPayment.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             requestId,
             paymentDate: new Date(paymentDate),
             submitDate: new Date(submitDate),
@@ -86,7 +86,7 @@ exports.updateOfflineBankPaymentStatus = asyncHandler(async (req, res) => {
             const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
             
             await tx.feePayment.create({
-                data: {
+                data: { schoolId: req.user.schoolId,
                     receiptNumber,
                     paymentDate: payment.paymentDate,
                     amount: payment.amount,
@@ -112,7 +112,8 @@ exports.updateOfflineBankPaymentStatus = asyncHandler(async (req, res) => {
 // Fee Group Controllers
 // =====================================
 exports.getFeeGroups = asyncHandler(async (req, res) => {
-    const groups = await prisma.feeGroup.findMany({ orderBy: { name: 'asc' }});
+    const groups = await prisma.feeGroup.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, groups, "Fee groups fetched successfully"));
 });
 
@@ -125,7 +126,7 @@ exports.createFeeGroup = asyncHandler(async (req, res) => {
     }
 
     const group = await prisma.feeGroup.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, group, "Fee group created successfully"));
 });
@@ -157,7 +158,8 @@ exports.deleteFeeGroup = asyncHandler(async (req, res) => {
 // Fee Type Controllers
 // =====================================
 exports.getFeeTypes = asyncHandler(async (req, res) => {
-    const types = await prisma.feeType.findMany({ orderBy: { name: 'asc' }});
+    const types = await prisma.feeType.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, types, "Fee types fetched successfully"));
 });
 
@@ -170,7 +172,7 @@ exports.createFeeType = asyncHandler(async (req, res) => {
     }
 
     const type = await prisma.feeType.create({
-        data: { name, code, description }
+        data: { schoolId: req.user.schoolId, name, code, description }
     });
     res.status(201).json(new ApiResponse(201, type, "Fee type created successfully"));
 });
@@ -203,6 +205,8 @@ exports.deleteFeeType = asyncHandler(async (req, res) => {
 // =====================================
 exports.getFeeMasters = asyncHandler(async (req, res) => {
     const masters = await prisma.feeMaster.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true, code: true } }
@@ -216,7 +220,7 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
     const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId } = req.body;
 
     const master = await prisma.feeMaster.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             dueDate: dueDate ? new Date(dueDate) : null,
             amount: parseFloat(amount),
             fineType: fineType || 'None',
@@ -266,7 +270,8 @@ exports.deleteFeeMaster = asyncHandler(async (req, res) => {
 // Fee Discount Controllers
 // =====================================
 exports.getFeeDiscounts = asyncHandler(async (req, res) => {
-    const discounts = await prisma.feeDiscount.findMany({ orderBy: { createdAt: 'desc' }});
+    const discounts = await prisma.feeDiscount.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { createdAt: 'desc' }});
     res.status(200).json(new ApiResponse(200, discounts, "Fee discounts fetched successfully"));
 });
 
@@ -279,7 +284,7 @@ exports.createFeeDiscount = asyncHandler(async (req, res) => {
     }
 
     const discount = await prisma.feeDiscount.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             code,
             discountType,
@@ -331,7 +336,7 @@ exports.createFeeReminder = asyncHandler(async (req, res) => {
     const { reminderType, days, isActive } = req.body;
 
     const reminder = await prisma.feeReminder.create({
-        data: { reminderType, days: parseInt(days), isActive: isActive || false }
+        data: { schoolId: req.user.schoolId, reminderType, days: parseInt(days), isActive: isActive || false }
     });
     res.status(201).json(new ApiResponse(201, reminder, "Fee reminder created successfully"));
 });
@@ -374,7 +379,7 @@ exports.collectFee = asyncHandler(async (req, res) => {
 
     const payment = await prisma.$transaction(async (tx) => {
         const newPayment = await tx.feePayment.create({
-            data: {
+            data: { schoolId: req.user.schoolId,
                 receiptNumber,
                 paymentDate: new Date(),
                 amount: rawAmount,
@@ -401,7 +406,7 @@ exports.collectFee = asyncHandler(async (req, res) => {
         
         // Inline Audit log inside transaction to ensure atomic write
         await tx.auditLog.create({
-            data: {
+            data: { schoolId: req.user.schoolId,
                 userId: req.user.id,
                 userEmail: req.user.email,
                 action: 'COLLECT_FEE',
@@ -508,6 +513,8 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 
     // Get all fee masters to calculate expected fees
     const feeMasters = await prisma.feeMaster.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true } }

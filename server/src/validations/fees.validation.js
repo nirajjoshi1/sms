@@ -71,6 +71,28 @@ const updateOfflineBankPaymentStatus = {
     }).strict()
 };
 
+const createFeeReminder = {
+    body: z.object({
+        title: z.string().min(1, "Title is required"),
+        message: z.string().min(1, "Message is required"),
+        dueDate: z.string().min(1, "Due date is required"),
+        feeGroupId: z.string().uuid().optional().nullable(),
+        classId: z.string().uuid().optional().nullable()
+    }).strict()
+};
+
+const updateFeeReminder = {
+    body: createFeeReminder.body.partial()
+};
+
+const carryForwardFees = {
+    body: z.object({
+        fromSessionId: z.string().uuid().optional(),
+        toSessionId: z.string().uuid().optional(),
+        studentIds: z.array(z.string().uuid()).optional()
+    }).strict()
+};
+
 module.exports = {
     createFeeGroup,
     createFeeType,
@@ -78,5 +100,8 @@ module.exports = {
     createFeeDiscount,
     collectFee,
     createOfflineBankPayment,
-    updateOfflineBankPaymentStatus
+    updateOfflineBankPaymentStatus,
+    createFeeReminder,
+    updateFeeReminder,
+    carryForwardFees
 };

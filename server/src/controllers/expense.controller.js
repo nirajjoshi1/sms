@@ -9,6 +9,8 @@ const { logAudit } = require('../utils/audit');
 // =====================================
 exports.getExpenseHeads = asyncHandler(async (req, res) => {
     const heads = await prisma.expenseHead.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     res.status(200).json(new ApiResponse(200, heads, "Expense heads fetched successfully"));
@@ -27,7 +29,7 @@ exports.createExpenseHead = asyncHandler(async (req, res) => {
     }
 
     const head = await prisma.expenseHead.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, head, "Expense head created successfully"));
 });
@@ -96,7 +98,7 @@ exports.createExpense = asyncHandler(async (req, res) => {
     }
 
     const expense = await prisma.expense.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             invoiceNumber,
             date: new Date(date),

@@ -84,6 +84,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
   // Get class-wise student distribution
   const classDistribution = await prisma.class.findMany({
+    where: { schoolId: req.user.schoolId },
+
     select: {
       id: true,
       name: true,

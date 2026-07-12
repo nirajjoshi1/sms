@@ -134,7 +134,7 @@ exports.updateSetting = asyncHandler(async (req, res) => {
         });
     } else {
         setting = await prisma.systemSetting.create({
-            data: { key, value: String(value) }
+            data: { schoolId: req.user.schoolId, key, value: String(value) }
         });
     }
 
@@ -164,6 +164,8 @@ exports.updateGeneralSettings = asyncHandler(async (req, res) => {
 // =====================================
 exports.getSessions = asyncHandler(async (req, res) => {
     const sessions = await prisma.academicSession.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { startDate: 'desc' }
     });
     res.status(200).json(new ApiResponse(200, sessions, "Sessions fetched successfully"));
@@ -186,7 +188,7 @@ exports.createSession = asyncHandler(async (req, res) => {
     }
 
     const session = await prisma.academicSession.create({
-        data: { name, startDate: new Date(startDate), endDate: new Date(endDate), isCurrent }
+        data: { schoolId: req.user.schoolId, name, startDate: new Date(startDate), endDate: new Date(endDate), isCurrent }
     });
 
     res.status(201).json(new ApiResponse(201, session, "Session created successfully"));
@@ -438,6 +440,8 @@ exports.updatePrintSettings = asyncHandler(async (req, res) => {
 // =====================================
 exports.getBackups = asyncHandler(async (req, res) => {
     const backups = await prisma.backup.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { createdAt: 'desc' }
     });
     res.status(200).json(new ApiResponse(200, backups, "Backups fetched successfully"));
@@ -474,7 +478,7 @@ exports.createBackup = asyncHandler(async (req, res) => {
     const stats = await fs.stat(filePath);
 
     const backup = await prisma.backup.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             filename,
             fileSize: stats.size,
             filePath

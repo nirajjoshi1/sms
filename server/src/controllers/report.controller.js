@@ -10,12 +10,16 @@ exports.getStudentReport = asyncHandler(async (req, res) => {
         prisma.student.count({ where: { isDisabled: false } }),
         prisma.student.count({ where: { isDisabled: true } }),
         prisma.class.findMany({
+            where: { schoolId: req.user.schoolId },
+
             select: {
                 name: true,
                 _count: { select: { Student: { where: { isDisabled: false } } } }
             }
         }),
         prisma.category.findMany({
+            where: { schoolId: req.user.schoolId },
+
             select: {
                 name: true,
                 _count: { select: { Student: { where: { isDisabled: false } } } }
@@ -78,9 +82,12 @@ exports.getAttendanceReport = asyncHandler(async (req, res) => {
 // 3. Finance Report
 exports.getFinanceReport = asyncHandler(async (req, res) => {
     const [feePayments, incomes, expenses] = await Promise.all([
-        prisma.feePayment.findMany({ select: { netAmount: true } }),
-        prisma.income.findMany({ select: { amount: true } }),
-        prisma.expense.findMany({ select: { amount: true } })
+        prisma.feePayment.findMany({ where: { schoolId: req.user.schoolId },
+ select: { netAmount: true } }),
+        prisma.income.findMany({ where: { schoolId: req.user.schoolId },
+ select: { amount: true } }),
+        prisma.expense.findMany({ where: { schoolId: req.user.schoolId },
+ select: { amount: true } })
     ]);
 
     const totalFees = feePayments.reduce((sum, p) => sum + Number(p.netAmount), 0);
@@ -100,12 +107,16 @@ exports.getHRReport = asyncHandler(async (req, res) => {
     const [totalStaff, departments, designations, leaveStats] = await Promise.all([
         prisma.staff.count({ where: { isDisabled: false } }),
         prisma.department.findMany({
+            where: { schoolId: req.user.schoolId },
+
             select: {
                 name: true,
                 _count: { select: { Staff: { where: { isDisabled: false } } } }
             }
         }),
         prisma.designation.findMany({
+            where: { schoolId: req.user.schoolId },
+
             select: {
                 name: true,
                 _count: { select: { Staff: { where: { isDisabled: false } } } }
@@ -138,6 +149,8 @@ exports.getHomeworkReport = asyncHandler(async (req, res) => {
         prisma.homework.count(),
         prisma.homeworkSubmission.count(),
         prisma.class.findMany({
+            where: { schoolId: req.user.schoolId },
+
             select: {
                 name: true,
                 Homework: {
