@@ -3,6 +3,8 @@ const router = express.Router();
 const staffController = require('../controllers/staff.controller');
 const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const { validate } = require('../middleware/validate.middleware');
+const staffValidation = require('../validations/staff.validation');
 
 // All routes require authentication and school context
 router.use(verifyJWT);
@@ -19,6 +21,7 @@ router.post(
     '/add',
     authorizeRoles('SUPER_ADMIN', 'ADMIN'),
     upload.single('photo'),
+    validate(staffValidation.addStaff),
     staffController.addStaff
 );
 
@@ -30,6 +33,7 @@ router.put(
     '/:id',
     authorizeRoles('SUPER_ADMIN', 'ADMIN'),
     upload.single('photo'),
+    validate(staffValidation.updateStaff),
     staffController.updateStaff
 );
 

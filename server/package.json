@@ -13,7 +13,7 @@
     "db:reset": "prisma migrate reset",
     "db:generate": "prisma generate",
     "lint": "echo 'Add ESLint later'",
-    "test": "echo 'Add tests later'",
+    "test": "node src/tests/run_tests.js",
     "production": "NODE_ENV=production node server.js"
   },
   "prisma": {

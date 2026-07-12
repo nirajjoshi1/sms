@@ -13,6 +13,7 @@ async function main() {
 
     // Delete in dependency order
     const deleteOrder = [
+        'studentHistory',
         'examMark',
         'homeworkSubmission',
         'homework',

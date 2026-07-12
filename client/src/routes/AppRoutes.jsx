@@ -95,6 +95,9 @@ import EmailSetting from '../pages/settings/EmailSetting';
 import PaymentSetting from '../pages/settings/PaymentSetting';
 import PrintSetting from '../pages/settings/PrintSetting';
 import BackupSetting from '../pages/settings/BackupSetting';
+import OnlineAdmission from '../pages/settings/OnlineAdmission';
+import BroadcastNotification from '../pages/settings/BroadcastNotification';
+import ExamMarks from '../pages/academics/ExamMarks';
 
 const Unauthorized = () => (
   <div className="flex items-center justify-center h-screen bg-gray-950">
@@ -178,6 +181,7 @@ const AppRoutes = () => {
           <Route path="academics/timetable/class" element={<ClassTimetable />} />
           <Route path="academics/timetable/teacher" element={<TeachersTimetable />} />
           <Route path="academics/promote" element={<PromoteStudents />} />
+          <Route path="academics/marks" element={<ExamMarks />} />
         </Route>
 
         {/* HR Routes */}
@@ -256,6 +260,8 @@ const AppRoutes = () => {
           <Route path="settings/payment" element={<PaymentSetting />} />
           <Route path="settings/print" element={<PrintSetting />} />
           <Route path="settings/backup" element={<BackupSetting />} />
+          <Route path="settings/online-admission" element={<OnlineAdmission />} />
+          <Route path="settings/broadcast" element={<BroadcastNotification />} />
         </Route>
 
         {/* Teacher Portal Routes */}

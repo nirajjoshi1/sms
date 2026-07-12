@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
+const { ROLE_PERMISSIONS } = require('../config/permissions');
 
 // ==========================================
 // JWT Verification Middleware
@@ -23,7 +24,7 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true }
+        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true, tokenVersion: true }
     });
 
     if (!user) {
@@ -32,6 +33,11 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
 
     if (!user.isActive) {
         throw new ApiError(403, "Your account has been disabled. Contact Super Admin.");
+    }
+
+    // Verify tokenVersion to support session revocation/sign-outs
+    if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) {
+        throw new ApiError(401, "Unauthorized - Session has been revoked. Please log in again.");
     }
 
     req.user = user;
@@ -125,4 +131,27 @@ exports.requireTeacherAssignment = (req, res, next) => {
     }
     
     next();
+};
+
+// ==========================================
+// Granular Permission Middleware
+// ==========================================
+exports.requirePermission = (permission) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            throw new ApiError(401, "Unauthorized");
+        }
+
+        // SUPER_ADMIN is platform admin; block them from school tenant operations
+        if (req.user.role === 'SUPER_ADMIN') {
+            throw new ApiError(403, "Super Admin cannot perform tenant operations");
+        }
+
+        const permissions = ROLE_PERMISSIONS[req.user.role] || [];
+        if (!permissions.includes(permission)) {
+            throw new ApiError(403, `Access denied - Required permission: ${permission}`);
+        }
+
+        next();
+    };
 };

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Download, Calendar, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, TrendingDown } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, TrendingDown } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
-import { DatePicker } from "@/components/ui/date-picker";
 
 const SearchExpense = () => {
   const navigate = useNavigate();
@@ -59,6 +58,28 @@ const SearchExpense = () => {
 
   const totalAmount = expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
 
+  const exportCSV = () => {
+    if (!expenses.length) return toast.info('No data to export');
+    const headers = ['Name', 'Expense Head', 'Amount', 'Invoice No', 'Date', 'Description'];
+    const rows = expenses.map(e => [
+      e.name || '',
+      e.expenseHead?.name || '',
+      e.amount || 0,
+      e.invoiceNumber || '',
+      e.date ? new Date(e.date).toLocaleDateString() : '',
+      (e.description || '').replace(/,/g, ';')
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expenses-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Expense report exported');
+  };
+
   const totalPages = Math.ceil(expenses.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -80,10 +101,11 @@ const SearchExpense = () => {
             Add Expense
           </button>
           <button
+            onClick={exportCSV}
             className="h-8 px-4 bg-muted text-foreground rounded-lg text-[10px] font-bold hover:bg-muted/80 transition-all flex items-center gap-2 w-fit"
           >
             <Download className="w-3 h-3" />
-            Export
+            Export CSV
           </button>
         </div>
       </div>

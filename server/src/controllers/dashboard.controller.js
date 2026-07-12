@@ -36,7 +36,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     totalCategories,
     totalHouses,
     totalUsers,
-    totalStaff
+    totalStaff,
+    feePayments,
+    incomes,
+    expenses
   ] = await Promise.all([
     prisma.student.count(),
     prisma.student.count({ where: { isDisabled: false } }),
@@ -45,8 +48,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     prisma.category.count(),
     prisma.house.count(),
     req.user.role === 'SUPER_ADMIN' ? prisma.user.count({ where: { isActive: true } }) : Promise.resolve(0),
-    prisma.staff.count({ where: { isDisabled: false } })
+    prisma.staff.count({ where: { isDisabled: false } }),
+    prisma.feePayment.aggregate({ _sum: { amount: true } }),
+    prisma.income.aggregate({ _sum: { amount: true } }),
+    prisma.expense.aggregate({ _sum: { amount: true } })
   ]);
+
+  const totalRevenue = Number(feePayments._sum.amount || 0) + Number(incomes._sum.amount || 0);
+  const totalExpenses = Number(expenses._sum.amount || 0);
 
   // Get recent students
   const recentStudents = await prisma.student.findMany({
@@ -133,8 +142,9 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       totalUsers: req.user.role === 'SUPER_ADMIN' ? totalUsers : undefined,
       totalStaff: req.user.role !== 'SUPER_ADMIN' ? totalStaff : undefined,
       studentGrowth: `+${studentGrowth}%`,
-      totalTeachers: 0, // Will be implemented with staff module
-      totalRevenue: 0, // Will be implemented with fees module
+      totalRevenue,
+      totalExpenses,
+      netBalance: totalRevenue - totalExpenses,
     },
     recentStudents,
     classDistribution: classDistribution.map(c => ({

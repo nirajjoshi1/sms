@@ -9,6 +9,8 @@ const authValidation = require('../validations/auth.validation');
 // Public routes
 router.post('/login', validate(authValidation.login), authController.login);
 router.post('/logout', authController.logout);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes (any logged-in user)
 router.get('/me', verifyJWT, authController.getMe);
@@ -16,9 +18,7 @@ router.patch('/change-password', verifyJWT, authController.changePassword);
 
 // User Management (Admin & Super Admin)
 router.post('/users', verifyJWT, authorizeRoles('SUPER_ADMIN', 'ADMIN'), validate(authValidation.createUser), authController.createUser);
-
-// Super Admin only routes
-router.get('/users', verifyJWT, authorizeRoles('SUPER_ADMIN'), authController.getAllUsers);
-router.patch('/users/:id/toggle-status', verifyJWT, authorizeRoles('SUPER_ADMIN'), authController.toggleUserStatus);
+router.get('/users', verifyJWT, authorizeRoles('SUPER_ADMIN', 'ADMIN'), authController.getAllUsers);
+router.patch('/users/:id/toggle-status', verifyJWT, authorizeRoles('SUPER_ADMIN', 'ADMIN'), authController.toggleUserStatus);
 
 module.exports = router;

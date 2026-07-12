@@ -2,67 +2,68 @@ const express = require('express');
 const router = express.Router();
 const feesController = require('../controllers/fees.controller');
 const { authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { validate } = require('../middleware/validate.middleware');
+const feesValidation = require('../validations/fees.validation');
 
-// All fee routes require ADMIN or ACCOUNTANT roles and school context
+// All fee routes require school context
 router.use(requireSchoolContext);
-router.use(authorizeRoles('ADMIN', 'ACCOUNTANT'));
 
 // Offline bank payment routes
 router.route('/offline-payments')
-    .get(feesController.getOfflineBankPayments)
-    .post(feesController.createOfflineBankPayment);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getOfflineBankPayments)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), validate(feesValidation.createOfflineBankPayment), feesController.createOfflineBankPayment);
 
-router.patch('/offline-payments/:id/status', feesController.updateOfflineBankPaymentStatus);
+router.patch('/offline-payments/:id/status', authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.updateOfflineBankPaymentStatus), feesController.updateOfflineBankPaymentStatus);
 
 // Fee group routes
 router.route('/groups')
-    .get(feesController.getFeeGroups)
-    .post(feesController.createFeeGroup);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getFeeGroups)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeGroup), feesController.createFeeGroup);
 
 router.route('/groups/:id')
-    .put(feesController.updateFeeGroup)
-    .delete(feesController.deleteFeeGroup);
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeGroup), feesController.updateFeeGroup)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeGroup);
 
 // Fee type routes
 router.route('/types')
-    .get(feesController.getFeeTypes)
-    .post(feesController.createFeeType);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getFeeTypes)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeType), feesController.createFeeType);
 
 router.route('/types/:id')
-    .put(feesController.updateFeeType)
-    .delete(feesController.deleteFeeType);
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeType), feesController.updateFeeType)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeType);
 
 // Fee master routes
 router.route('/masters')
-    .get(feesController.getFeeMasters)
-    .post(feesController.createFeeMaster);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getFeeMasters)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeMaster), feesController.createFeeMaster);
 
 router.route('/masters/:id')
-    .put(feesController.updateFeeMaster)
-    .delete(feesController.deleteFeeMaster);
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeMaster), feesController.updateFeeMaster)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeMaster);
 
 // Fee discount routes
 router.route('/discounts')
-    .get(feesController.getFeeDiscounts)
-    .post(feesController.createFeeDiscount);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getFeeDiscounts)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeDiscount), feesController.createFeeDiscount);
 
 router.route('/discounts/:id')
-    .put(feesController.updateFeeDiscount)
-    .delete(feesController.deleteFeeDiscount);
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), validate(feesValidation.createFeeDiscount), feesController.updateFeeDiscount)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeDiscount);
 
 // Fee reminder routes
 router.route('/reminders')
-    .get(feesController.getFeeReminders)
-    .post(feesController.createFeeReminder);
+    .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.getFeeReminders)
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.createFeeReminder);
 
 router.route('/reminders/:id')
-    .put(feesController.updateFeeReminder)
-    .delete(feesController.deleteFeeReminder);
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.updateFeeReminder)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeReminder);
 
 // Fee collection routes
-router.post('/collect', feesController.collectFee);
-router.get('/payments', feesController.searchFeePayments);
-router.get('/due', feesController.getDueFees);
-router.post('/carry-forward', feesController.carryForwardFees);
+router.post('/collect', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), validate(feesValidation.collectFee), feesController.collectFee);
+router.get('/payments', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.searchFeePayments);
+router.get('/due', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getDueFees);
+router.post('/carry-forward', authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.carryForwardFees);
 
 module.exports = router;

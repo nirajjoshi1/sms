@@ -208,10 +208,21 @@ exports.getMediaFileById = asyncHandler(async (req, res) => {
 });
 
 exports.uploadMediaFile = asyncHandler(async (req, res) => {
+    const { name, url, type, size } = req.body;
+
+    if (!name || !url) {
+        throw new ApiError(400, 'File name and URL are required');
+    }
+
     const file = await prisma.mediaFile.create({
-        data: { ...req.body }
+        data: {
+            name,
+            url,
+            type: type || 'image',
+            size: size ? parseInt(size) : null
+        }
     });
-    res.status(201).json(new ApiResponse(201, file, "Media file uploaded successfully"));
+    res.status(201).json(new ApiResponse(201, file, "Media file saved successfully"));
 });
 
 exports.updateMediaFile = asyncHandler(async (req, res) => {

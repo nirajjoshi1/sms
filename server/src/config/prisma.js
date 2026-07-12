@@ -16,7 +16,7 @@ const prisma = prismaBase.$extends({
       async $allOperations({ model, operation, args, query }) {
         const user = asyncLocalStorage.getStore();
         
-        const skipModels = ['School', 'User', 'Backup', 'SystemSetting'];
+        const skipModels = ['School', 'User'];
         
         if (skipModels.includes(model) || !user) {
             return query(args);

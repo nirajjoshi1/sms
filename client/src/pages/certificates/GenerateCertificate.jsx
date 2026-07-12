@@ -93,9 +93,75 @@ const GenerateCertificate = () => {
   };
 
   const handleDownload = () => {
-    toast.info('PDF generation feature coming soon!', {
-      description: 'This will generate a PDF certificate for download'
-    });
+    const printContent = `
+      <html>
+        <head>
+          <title>Certificate - ${preview.studentName || 'Student'}</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              margin: 0;
+              padding: 40px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background-color: #fff;
+            }
+            .certificate-container {
+              border: 12px double #b45309;
+              padding: 40px;
+              text-align: center;
+              max-width: 800px;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            .header {
+              font-size: 28px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              color: #78350f;
+              border-bottom: 2px solid #b45309;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .body {
+              font-size: 16px;
+              color: #4b5563;
+              line-height: 1.8;
+              margin-bottom: 30px;
+              white-space: pre-line;
+            }
+            .footer {
+              font-size: 14px;
+              color: #6b7280;
+              border-top: 2px solid #b45309;
+              padding-top: 20px;
+              margin-top: 30px;
+              white-space: pre-line;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="certificate-container">
+            <div class="header">${preview.headerText}</div>
+            <div class="body">${preview.bodyText}</div>
+            <div class="footer">${preview.footerText || ''}</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   return (
