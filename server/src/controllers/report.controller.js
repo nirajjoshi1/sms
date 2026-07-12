@@ -6,9 +6,9 @@ const { asyncHandler } = require('../utils/asyncHandler');
 // 1. Student Report
 exports.getStudentReport = asyncHandler(async (req, res) => {
     const [total, active, disabled, classes, categories, genders] = await Promise.all([
-        prisma.student.count(),
-        prisma.student.count({ where: { isDisabled: false } }),
-        prisma.student.count({ where: { isDisabled: true } }),
+        prisma.student.count({ where: { schoolId: req.user.schoolId } }),
+        prisma.student.count({ where: { schoolId: req.user.schoolId, isDisabled: false } }),
+        prisma.student.count({ where: { schoolId: req.user.schoolId, isDisabled: true } }),
         prisma.class.findMany({
             where: { schoolId: req.user.schoolId },
 
@@ -28,7 +28,7 @@ exports.getStudentReport = asyncHandler(async (req, res) => {
         prisma.student.groupBy({
             by: ['gender'],
             _count: { _all: true },
-            where: { isDisabled: false }
+            where: { schoolId: req.user.schoolId, isDisabled: false }
         })
     ]);
 
@@ -52,12 +52,12 @@ exports.getAttendanceReport = asyncHandler(async (req, res) => {
         prisma.studentAttendance.groupBy({
             by: ['status'],
             _count: { _all: true },
-            where: { date: { gte: start, lte: end } }
+            where: { schoolId: req.user.schoolId, date: { gte: start, lte: end } }
         }),
         prisma.staffAttendance.groupBy({
             by: ['status'],
             _count: { _all: true },
-            where: { date: { gte: start, lte: end } }
+            where: { schoolId: req.user.schoolId, date: { gte: start, lte: end } }
         })
     ]);
 
@@ -105,7 +105,7 @@ exports.getFinanceReport = asyncHandler(async (req, res) => {
 // 4. HR Report
 exports.getHRReport = asyncHandler(async (req, res) => {
     const [totalStaff, departments, designations, leaveStats] = await Promise.all([
-        prisma.staff.count({ where: { isDisabled: false } }),
+        prisma.staff.count({ where: { schoolId: req.user.schoolId, isDisabled: false } }),
         prisma.department.findMany({
             where: { schoolId: req.user.schoolId },
 
@@ -124,7 +124,8 @@ exports.getHRReport = asyncHandler(async (req, res) => {
         }),
         prisma.leaveRequest.groupBy({
             by: ['status'],
-            _count: { _all: true }
+            _count: { _all: true },
+            where: { schoolId: req.user.schoolId }
         })
     ]);
 
@@ -146,8 +147,8 @@ exports.getHRReport = asyncHandler(async (req, res) => {
 // 5. Homework Report
 exports.getHomeworkReport = asyncHandler(async (req, res) => {
     const [totalHomework, totalSubmissions, classSubmissions] = await Promise.all([
-        prisma.homework.count(),
-        prisma.homeworkSubmission.count(),
+        prisma.homework.count({ where: { schoolId: req.user.schoolId } }),
+        prisma.homeworkSubmission.count({ where: { schoolId: req.user.schoolId } }),
         prisma.class.findMany({
             where: { schoolId: req.user.schoolId },
 
@@ -177,7 +178,7 @@ exports.getHomeworkReport = asyncHandler(async (req, res) => {
 // 6. Alumni Report
 exports.getAlumniReport = asyncHandler(async (req, res) => {
     const graduates = await prisma.student.findMany({
-        where: { isDisabled: true },
+        where: { schoolId: req.user.schoolId, isDisabled: true },
         select: {
             id: true,
             admissionNo: true,
@@ -203,6 +204,7 @@ exports.getAuditTrail = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
 
     const where = {
+        schoolId: req.user.schoolId,
         ...(action && { action }),
         ...(resource && { resource }),
         ...(search && {
@@ -237,6 +239,7 @@ exports.getUserLogs = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
 
     const where = {
+        schoolId: req.user.schoolId,
         action: { in: ['LOGIN', 'LOGOUT', 'PASSWORD_RESET', 'FORGOT_PASSWORD'] },
         ...(search && {
             OR: [
