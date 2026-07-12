@@ -228,7 +228,7 @@ exports.getStudents = asyncHandler(async (req, res) => {
 exports.takeAttendance = asyncHandler(async (req, res) => {
     const staff = await getStaff(req.user.id);
     const { date, classId, sectionId, attendances } = req.body;
-    if (!date || !classId || !sectionId || !attendances?.length) {
+    if (!date || !classId || !sectionId || !Array.isArray(attendances) || attendances.length === 0) {
         throw new ApiError(400, 'date, classId, sectionId, and attendances[] are required');
     }
     await ensureClassAccess(staff, classId, sectionId);
@@ -336,7 +336,7 @@ exports.createHomework = asyncHandler(async (req, res) => {
     await ensureSubjectAccess(staff, classId, sectionId, subjectId);
 
     const homework = await prisma.homework.create({
-        data: { schoolId: req.user.schoolId, title, description, dueDate: new Date(dueDate), classId, sectionId, subjectId, staffId: staff.id, attachmentUrl: attachmentUrl || null, schoolId: staff.schoolId || null },
+        data: { title, description, dueDate: new Date(dueDate), classId, sectionId, subjectId, staffId: staff.id, attachmentUrl: attachmentUrl || null, schoolId: staff.schoolId || null },
         include: {
             Class: { select: { name: true } },
             Section: { select: { name: true } },
@@ -448,7 +448,7 @@ exports.enterMarks = asyncHandler(async (req, res) => {
     const staff = await getStaff(req.user.id);
     const { examName, subjectId, classId, sectionId, marks } = req.body;
 
-    if (!examName || !subjectId || !classId || !sectionId || !marks?.length) {
+    if (!examName || !subjectId || !classId || !sectionId || !Array.isArray(marks) || marks.length === 0) {
         throw new ApiError(400, 'examName, subjectId, classId, sectionId, marks[] required');
     }
     await ensureSubjectAccess(staff, classId, sectionId, subjectId);
