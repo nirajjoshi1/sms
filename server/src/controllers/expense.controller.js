@@ -2,6 +2,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Expense Head Controllers
@@ -107,6 +108,16 @@ exports.createExpense = asyncHandler(async (req, res) => {
         include: {
             ExpenseHead: { select: { name: true } }
         }
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADD_EXPENSE',
+        resource: 'Expense',
+        resourceId: expense.id,
+        details: { name, amount: expense.amount, expenseHeadId },
+        schoolId: req.user.schoolId
     });
 
     res.status(201).json(new ApiResponse(201, expense, "Expense added successfully"));

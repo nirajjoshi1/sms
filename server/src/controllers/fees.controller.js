@@ -3,6 +3,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Offline Bank Payment Controllers
@@ -365,6 +366,16 @@ exports.collectFee = asyncHandler(async (req, res) => {
         console.error("Failed to trigger fee payment notification:", err);
     }
 
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'COLLECT_FEE',
+        resource: 'FeePayment',
+        resourceId: payment.id,
+        details: { receiptNumber, amount: payment.amount, netAmount: payment.netAmount, studentId },
+        schoolId: req.user.schoolId
+    });
+
     res.status(201).json(new ApiResponse(201, payment, "Fee collected successfully"));
 });
 
@@ -453,8 +464,8 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 
     // Calculate due fees for each student
     const dueFeesData = students.map(student => {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + master.amount, 0);
-        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + payment.netAmount, 0);
+        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
+        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount), 0);
         const dueAmount = totalExpected - totalPaid;
 
         return {
@@ -480,6 +491,10 @@ exports.carryForwardFees = asyncHandler(async (req, res) => {
         throw new ApiError(400, "From session and to session are required");
     }
 
+    if (fromSession === toSession) {
+        throw new ApiError(400, "From session and to session cannot be the same");
+    }
+
     // Get students with due fees
     const students = await prisma.student.findMany({
         where: {
@@ -487,33 +502,64 @@ exports.carryForwardFees = asyncHandler(async (req, res) => {
             ...(classId && { classId })
         },
         include: {
-            FeePayment: true
+            FeePayment: {
+                where: { session: fromSession }
+            }
         }
     });
 
-    // Get all fee masters
-    const feeMasters = await prisma.feeMaster.findMany();
+    // Get all fee masters for the from-session
+    const feeMasters = await prisma.feeMaster.findMany({
+        where: { session: fromSession }
+    });
 
     let carriedForwardCount = 0;
+    const carryForwardRecords = [];
 
-    // For each student, calculate due amount and create a carry forward record
+    // For each student, calculate due amount in the from-session
     for (const student of students) {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + master.amount, 0);
-        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + payment.netAmount, 0);
+        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
+        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount || payment.amount || 0), 0);
         const dueAmount = totalExpected - totalPaid;
 
         if (dueAmount > 0) {
-            // Create a new fee payment record for the carried forward amount
-            // In a real implementation, you might want to create a separate CarryForward model
-            // For now, we'll just count the records
-            carriedForwardCount++;
+            // Check if a carry-forward record already exists for this student in toSession
+            const existing = await prisma.feePayment.findFirst({
+                where: {
+                    studentId: student.id,
+                    session: toSession,
+                    paymentMode: 'carry_forward'
+                }
+            });
+
+            if (!existing) {
+                carryForwardRecords.push({
+                    studentId: student.id,
+                    amount: dueAmount,
+                    netAmount: dueAmount,
+                    session: toSession,
+                    paymentDate: new Date(),
+                    paymentMode: 'carry_forward',
+                    receiptNo: `CF-${fromSession.replace(/\s/g, '')}-${student.id.slice(0, 6).toUpperCase()}`,
+                    status: 'Due',
+                    note: `Carried forward from session ${fromSession}`
+                });
+                carriedForwardCount++;
+            }
         }
+    }
+
+    // Bulk create all carry-forward records
+    if (carryForwardRecords.length > 0) {
+        await prisma.feePayment.createMany({ data: carryForwardRecords });
     }
 
     res.status(200).json(new ApiResponse(200, {
         studentsProcessed: students.length,
         feesCarriedForward: carriedForwardCount,
         fromSession,
-        toSession
-    }, `Fees carried forward successfully for ${carriedForwardCount} students`));
+        toSession,
+        alreadyExisted: students.length - carriedForwardCount
+    }, `Fees carried forward successfully for ${carriedForwardCount} students from ${fromSession} to ${toSession}`));
 });
+

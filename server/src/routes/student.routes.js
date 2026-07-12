@@ -3,6 +3,8 @@ const router = express.Router();
 const studentController = require('../controllers/student.controller');
 const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const { validate } = require('../middleware/validate.middleware');
+const studentValidation = require('../validations/student.validation');
 
 // All routes require authentication and school context
 router.use(verifyJWT);
@@ -22,6 +24,7 @@ router.post(
         { name: 'photo', maxCount: 1 },
         { name: 'birthCertificate', maxCount: 1 }
     ]),
+    validate(studentValidation.admitStudent),
     studentController.admitStudent
 );
 
@@ -36,6 +39,7 @@ router.put(
         { name: 'photo', maxCount: 1 },
         { name: 'birthCertificate', maxCount: 1 }
     ]),
+    validate(studentValidation.updateStudent),
     studentController.updateStudent
 );
 

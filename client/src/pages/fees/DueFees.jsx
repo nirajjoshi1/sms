@@ -41,9 +41,39 @@ const DueFees = () => {
     fetchData();
   }, [classFilter]);
 
-  const sendReminder = (studentId) => {
-    toast.success('Reminder sent successfully');
-    // TODO: Implement actual reminder API
+  const [sendingId, setSendingId] = useState(null);
+
+  const sendReminder = async (studentId) => {
+    try {
+      setSendingId(studentId);
+      await api.post('/fees/reminders', { studentId, type: 'Due Fee Reminder' });
+      toast.success('Reminder sent successfully');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to send reminder'));
+    } finally {
+      setSendingId(null);
+    }
+  };
+
+  const exportCSV = () => {
+    if (!filteredDueFees.length) return toast.info('No data to export');
+    const headers = ['Student Name', 'Admission No', 'Class', 'Section', 'Due Amount'];
+    const rows = filteredDueFees.map(d => [
+      `${d.Student?.firstName || ''} ${d.Student?.lastName || ''}`.trim(),
+      d.Student?.admissionNo || '',
+      d.Student?.Class?.name || '',
+      d.Student?.Section?.name || '',
+      d.dueAmount || 0
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `due-fees-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Report exported successfully');
   };
 
   const filteredDueFees = dueFees.filter(d => {
@@ -70,10 +100,11 @@ const DueFees = () => {
           <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">View students with due fees</p>
         </div>
         <button
+          onClick={exportCSV}
           className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold hover:opacity-90 transition-all flex items-center gap-2 w-fit"
         >
           <Download className="w-3 h-3" />
-          Export Report
+          Export CSV
         </button>
       </div>
 

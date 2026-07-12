@@ -1,21 +1,44 @@
 const express = require('express');
 const router = express.Router();
 const financeController = require('../controllers/finance.controller');
+const { requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
 
+router.use(requireSchoolContext);
+
+// Income Head routes
 router.route('/income-heads')
     .get(financeController.getIncomeHeads)
-    .post(financeController.createIncomeHead);
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.createIncomeHead);
 
+router.route('/income-heads/:id')
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.updateIncomeHead)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.deleteIncomeHead);
+
+// Income routes
 router.route('/income')
     .get(financeController.getIncomes)
-    .post(financeController.createIncome);
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.createIncome);
 
+router.route('/income/:id')
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.updateIncome)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.deleteIncome);
+
+// Expense Head routes
 router.route('/expense-heads')
     .get(financeController.getExpenseHeads)
-    .post(financeController.createExpenseHead);
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.createExpenseHead);
 
+router.route('/expense-heads/:id')
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.updateExpenseHead)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.deleteExpenseHead);
+
+// Expense routes
 router.route('/expense')
     .get(financeController.getExpenses)
-    .post(financeController.createExpense);
+    .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.createExpense);
+
+router.route('/expense/:id')
+    .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.updateExpense)
+    .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), financeController.deleteExpense);
 
 module.exports = router;

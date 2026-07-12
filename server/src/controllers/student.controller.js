@@ -4,6 +4,7 @@ const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
 const { cloudinary } = require('../config/cloudinary');
+const { logAudit } = require('../utils/audit');
 
 // Get all students with pagination and search
 exports.getStudents = asyncHandler(async (req, res) => {
@@ -110,12 +111,15 @@ exports.admitStudent = asyncHandler(async (req, res) => {
         select: { admissionNo: true }
     });
 
-    let admissionNo;
+    let admissionNo = '1';
     if (lastStudent && lastStudent.admissionNo) {
         const lastNum = parseInt(lastStudent.admissionNo);
-        admissionNo = (lastNum + 1).toString();
-    } else {
-        admissionNo = '1';
+        if (!isNaN(lastNum)) {
+            admissionNo = (lastNum + 1).toString();
+        } else {
+            // Fallback: append timestamp or hash if parsing failed to guarantee uniqueness
+            admissionNo = `ADM-${Date.now()}`;
+        }
     }
 
     // Handle file uploads from multer
@@ -178,6 +182,15 @@ exports.admitStudent = asyncHandler(async (req, res) => {
     } catch (err) {
         console.error("Failed to trigger admission notification:", err);
     }
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADMIT_STUDENT',
+        resource: 'Student',
+        resourceId: student.id,
+        details: { admissionNo, firstName, lastName, classId, sectionId },
+        schoolId: req.user.schoolId
+    });
 
     res.status(201).json(new ApiResponse(201, student, `Student admitted successfully with Admission No: ${admissionNo}`));
 });

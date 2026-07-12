@@ -4,10 +4,11 @@ const prisma = require('../config/prisma');
 const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
+const { logAudit } = require('../utils/audit');
 
-const generateToken = (userId, role) => {
+const generateToken = (userId, role, tokenVersion = 0) => {
     return jwt.sign(
-        { id: userId, role },
+        { id: userId, role, tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
     );
@@ -85,6 +86,16 @@ exports.createUser = asyncHandler(async (req, res) => {
         }
     });
 
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'CREATE_USER',
+        resource: 'User',
+        resourceId: user.id,
+        details: { email: user.email, role: user.role },
+        schoolId: user.schoolId
+    });
+
     return res.status(201).json(new ApiResponse(201, {
         user: { id: user.id, name: user.name, email: user.email, role: user.role, schoolId: user.schoolId }
     }, "User created successfully"));
@@ -108,12 +119,57 @@ exports.login = asyncHandler(async (req, res) => {
         throw new ApiError(403, "Your account has been disabled. Contact Super Admin.");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-        throw new ApiError(401, "Invalid email or password");
+    // Check account lockout
+    if (user.lockUntil && user.lockUntil > new Date()) {
+        const remainingMinutes = Math.ceil((user.lockUntil.getTime() - Date.now()) / (60 * 1000));
+        throw new ApiError(400, `Account is temporarily locked. Please try again after ${remainingMinutes} minutes.`);
     }
 
-    const token = generateToken(user.id, user.role);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+        // Increment login attempts
+        const attempts = user.loginAttempts + 1;
+        let lockUntil = null;
+        
+        if (attempts >= 5) {
+            lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes lockout
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                loginAttempts: attempts,
+                lockUntil
+            }
+        });
+
+        await logAudit({
+            userId: user.id,
+            userEmail: user.email,
+            action: 'LOGIN_FAILURE',
+            resource: 'User',
+            resourceId: user.id,
+            details: { reason: 'Invalid password', attempts },
+            schoolId: user.schoolId
+        });
+
+        if (attempts >= 5) {
+            throw new ApiError(400, "Account has been locked for 15 minutes due to too many failed attempts.");
+        } else {
+            throw new ApiError(401, "Invalid email or password");
+        }
+    }
+
+    // Reset login attempts on success
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            loginAttempts: 0,
+            lockUntil: null
+        }
+    });
+
+    const token = generateToken(user.id, user.role, user.tokenVersion);
 
     // Fetch user with school
     const userWithSchool = await prisma.user.findUnique({
@@ -127,6 +183,16 @@ exports.login = asyncHandler(async (req, res) => {
                 select: { id: true, name: true, logo: true }
             }
         }
+    });
+
+    await logAudit({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'LOGIN_SUCCESS',
+        resource: 'User',
+        resourceId: user.id,
+        details: { role: user.role },
+        schoolId: user.schoolId
     });
 
     return res.status(200)
@@ -166,27 +232,50 @@ exports.getMe = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, "User profile fetched successfully"));
 });
 
-// @desc    Get all users (Super Admin only)
+// @desc    Get all users (Admin & Super Admin)
 // @route   GET /api/v1/auth/users
 exports.getAllUsers = asyncHandler(async (req, res) => {
+    const isSuperAdmin = req.user.role === 'SUPER_ADMIN';
+    const where = isSuperAdmin ? {} : { schoolId: req.user.schoolId };
+
     const users = await prisma.user.findMany({
-        select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+        where,
+        select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, schoolId: true },
         orderBy: { createdAt: 'desc' }
     });
 
     return res.status(200).json(new ApiResponse(200, users, "Users fetched successfully"));
 });
 
-// @desc    Toggle user active status (Super Admin only)
+// @desc    Toggle user active status (Admin & Super Admin)
 // @route   PATCH /api/v1/auth/users/:id/toggle-status
 exports.toggleUserStatus = asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    const isSuperAdmin = req.user.role === 'SUPER_ADMIN';
+    
+    if (req.params.id === req.user.id) {
+        throw new ApiError(400, "You cannot disable your own account");
+    }
+
+    const where = isSuperAdmin ? { id: req.params.id } : { id: req.params.id, schoolId: req.user.schoolId };
+    const user = await prisma.user.findFirst({ where });
+    
+    // Return 404 if not found or belongs to another tenant to prevent info leakage
     if (!user) throw new ApiError(404, "User not found");
 
     const updated = await prisma.user.update({
         where: { id: req.params.id },
         data: { isActive: !user.isActive },
-        select: { id: true, name: true, email: true, role: true, isActive: true }
+        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true }
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'TOGGLE_USER_STATUS',
+        resource: 'User',
+        resourceId: updated.id,
+        details: { targetEmail: updated.email, isActive: updated.isActive },
+        schoolId: updated.schoolId
     });
 
     return res.status(200).json(new ApiResponse(200, updated, `User ${updated.isActive ? 'enabled' : 'disabled'} successfully`));
@@ -197,12 +286,170 @@ exports.toggleUserStatus = asyncHandler(async (req, res) => {
 exports.changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
+    if (!newPassword || newPassword.length < 8) {
+        throw new ApiError(400, "New password must be at least 8 characters long");
+    }
+
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) throw new ApiError(401, "Current password is incorrect");
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: req.user.id }, data: { password: hashedPassword } });
+    
+    // Update password and increment tokenVersion to revoke other sessions
+    await prisma.user.update({ 
+        where: { id: req.user.id }, 
+        data: { 
+            password: hashedPassword,
+            tokenVersion: { increment: 1 }
+        } 
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'PASSWORD_CHANGE',
+        resource: 'User',
+        resourceId: req.user.id,
+        details: {},
+        schoolId: req.user.schoolId
+    });
 
     return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+// Helper for sending reset email (fallback to log in development)
+const sendResetEmail = async (email, token, schoolId) => {
+    try {
+        const nodemailer = require('nodemailer');
+        
+        let settings = null;
+        if (schoolId) {
+            settings = await prisma.emailSetting.findFirst({
+                where: { schoolId }
+            });
+        }
+        
+        const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+        
+        if (settings && settings.isEnabled && settings.smtpHost && settings.smtpPort && settings.smtpUsername && settings.smtpPassword && settings.fromEmail) {
+            const transporter = nodemailer.createTransport({
+                host: settings.smtpHost,
+                port: Number(settings.smtpPort),
+                secure: settings.smtpEncryption === 'ssl' || String(settings.smtpPort) === '465',
+                auth: {
+                    user: settings.smtpUsername,
+                    pass: settings.smtpPassword
+                }
+            });
+            await transporter.sendMail({
+                from: `"${settings.fromName || 'School Management System'}" <${settings.fromEmail}>`,
+                to: email,
+                subject: 'Reset Password - School Management System',
+                text: `You requested a password reset. Please click on the link below to reset your password:\n\n${resetLink}`,
+                html: `<p>You requested a password reset. Please click on the link below to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`
+            });
+            console.log(`[EMAIL] Sent reset password email to ${email}`);
+        } else {
+            console.log(`\n========================================\n[DEV-EMAIL-LOG] Password reset request for ${email}\nToken: ${token}\nReset Link: ${resetLink}\n========================================\n`);
+        }
+    } catch (error) {
+        console.error('Failed to send reset email:', error);
+    }
+};
+
+// @desc    Request password reset token
+// @route   POST /api/v1/auth/forgot-password
+exports.forgotPassword = asyncHandler(async (req, res) => {
+    let { email } = req.body;
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+    email = email.trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    // Always return 200 to prevent user enumeration
+    if (!user) {
+        return res.status(200).json(new ApiResponse(200, null, "If a user with this email exists, a password reset link has been sent."));
+    }
+
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            passwordResetToken: resetTokenHash,
+            passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiration
+        }
+    });
+
+    await sendResetEmail(email, resetToken, user.schoolId);
+
+    await logAudit({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'PASSWORD_RESET_REQUESTED',
+        resource: 'User',
+        resourceId: user.id,
+        details: { email },
+        schoolId: user.schoolId
+    });
+
+    return res.status(200).json(new ApiResponse(200, null, "If a user with this email exists, a password reset link has been sent."));
+});
+
+// @desc    Reset password using token
+// @route   POST /api/v1/auth/reset-password
+exports.resetPassword = asyncHandler(async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) {
+        throw new ApiError(400, "Token and password are required");
+    }
+
+    if (password.length < 8) {
+        throw new ApiError(400, "Password must be at least 8 characters long");
+    }
+
+    const crypto = require('crypto');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await prisma.user.findFirst({
+        where: {
+            passwordResetToken: tokenHash,
+            passwordResetExpires: { gte: new Date() }
+        }
+    });
+
+    if (!user) {
+        throw new ApiError(400, "Password reset token is invalid or has expired");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpires: null,
+            tokenVersion: { increment: 1 }, // Revoke all current active sessions!
+            loginAttempts: 0,
+            lockUntil: null
+        }
+    });
+
+    await logAudit({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'PASSWORD_RESET_SUCCESS',
+        resource: 'User',
+        resourceId: user.id,
+        details: { email: user.email },
+        schoolId: user.schoolId
+    });
+
+    return res.status(200).json(new ApiResponse(200, null, "Password reset successful. Please log in with your new password."));
 });

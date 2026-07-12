@@ -3,6 +3,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Class Controllers
@@ -450,6 +451,14 @@ exports.promoteStudents = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Missing required fields");
     }
 
+    // Retrieve active session
+    const currentSession = await prisma.academicSession.findFirst({
+        where: { isCurrent: true }
+    });
+    if (!currentSession) {
+        throw new ApiError(400, "No active academic session found. Please set a current session first.");
+    }
+
     // Validate destination class and section exist
     const [toClass, toSection] = await Promise.all([
         prisma.class.findUnique({ where: { id: toClassId } }),
@@ -460,23 +469,89 @@ exports.promoteStudents = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Destination class or section not found");
     }
 
-    // Perform promotion in transaction
+    // Perform promotion in a secure transaction
     const result = await prisma.$transaction(async (tx) => {
-        const updated = await tx.student.updateMany({
-            where: {
-                id: { in: studentIds },
-                ...(fromClassId && { classId: fromClassId }),
-                ...(fromSectionId && { sectionId: fromSectionId })
-            },
-            data: {
-                classId: toClassId,
-                sectionId: toSectionId,
-                rollNumber: null
-            }
+        // Fetch target students to verify and log their previous states
+        const students = await tx.student.findMany({
+            where: { id: { in: studentIds } }
         });
 
-        return updated;
+        if (students.length === 0) {
+            throw new ApiError(404, "No students found to promote");
+        }
+
+        // Create history log and update current class/section for each student
+        for (const student of students) {
+            // Log history for the session they are leaving/completing
+            await tx.studentHistory.create({
+                data: {
+                    studentId: student.id,
+                    classId: student.classId,
+                    sectionId: student.sectionId,
+                    academicSessionId: currentSession.id,
+                    status: 'Promoted',
+                    schoolId: req.user.schoolId
+                }
+            });
+
+            // Transition student to the new class and section
+            await tx.student.update({
+                where: { id: student.id },
+                data: {
+                    classId: toClassId,
+                    sectionId: toSectionId,
+                    rollNumber: null // Reset roll number for the new class
+                }
+            });
+        }
+
+        return students.length;
     });
 
-    res.status(200).json(new ApiResponse(200, result, `${result.count} students promoted successfully`));
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'PROMOTE_STUDENTS',
+        resource: 'Student',
+        details: { count: result, studentIds, toClassId, toSectionId, academicSessionId: currentSession.id },
+        schoolId: req.user.schoolId
+    });
+
+    res.status(200).json(new ApiResponse(200, { promotedCount: result }, `${result} students promoted successfully`));
+});
+
+// @desc Get all marks for admin overview
+// @route GET /api/v1/academics/marks
+// @access ADMIN
+exports.getAllMarks = asyncHandler(async (req, res) => {
+    const { classId, sectionId, subjectId, examType } = req.query;
+
+    const marks = await prisma.mark.findMany({
+        where: {
+            ...(classId && { classId }),
+            ...(sectionId && { sectionId }),
+            ...(subjectId && { subjectId }),
+            ...(examType && { examType })
+        },
+        include: {
+            Student: { select: { firstName: true, lastName: true, admissionNo: true } },
+            Subject: { select: { name: true } },
+            Class: { select: { name: true } },
+            Section: { select: { name: true } },
+            Staff: { select: { firstName: true, lastName: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    // Aggregate stats
+    const total = marks.length;
+    const passing = marks.filter(m => m.grade !== 'F' && m.grade !== 'Fail').length;
+    const avgMarks = total > 0
+        ? (marks.reduce((sum, m) => sum + Number(m.marksObtained || 0), 0) / total).toFixed(1)
+        : 0;
+
+    res.status(200).json(new ApiResponse(200, {
+        marks,
+        summary: { total, passing, failing: total - passing, avgMarks }
+    }, 'Marks fetched successfully'));
 });

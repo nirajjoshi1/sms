@@ -2,6 +2,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Income Head Controllers
@@ -107,6 +108,16 @@ exports.createIncome = asyncHandler(async (req, res) => {
         include: {
             IncomeHead: { select: { name: true } }
         }
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADD_INCOME',
+        resource: 'Income',
+        resourceId: income.id,
+        details: { name, amount: income.amount, incomeHeadId },
+        schoolId: req.user.schoolId
     });
 
     res.status(201).json(new ApiResponse(201, income, "Income added successfully"));

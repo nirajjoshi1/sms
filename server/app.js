@@ -27,6 +27,7 @@ const dashboardRoutes = require("./src/routes/dashboard.routes");
 const notificationRoutes = require("./src/routes/notification.routes");
 const teacherRoutes = require("./src/routes/teacher.routes");
 const schoolRequestRoutes = require("./src/routes/schoolRequest.routes");
+const reportRoutes = require("./src/routes/report.routes");
 
 const app = express();
 
@@ -108,16 +109,18 @@ app.get("/health", (req, res) => {
     });
 });
 
-// Debug endpoint to see what routes are registered
-app.get("/api/v1/debug", (req, res) => {
-    res.json({
-        url: req.url,
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path,
-        method: req.method
+// Debug endpoint (development only)
+if (process.env.NODE_ENV !== "production") {
+    app.get("/api/v1/debug", (req, res) => {
+        res.json({
+            url: req.url,
+            originalUrl: req.originalUrl,
+            baseUrl: req.baseUrl,
+            path: req.path,
+            method: req.method
+        });
     });
-});
+}
 
 // API status endpoint
 app.get("/api/v1", (req, res) => {
@@ -150,7 +153,7 @@ app.use("/api/v1/academics", requireTenantUser, academicsRoutes);
 app.use("/api/v1/student-setup", requireTenantUser, studentSetupRoutes);
 app.use("/api/v1/hr", requireTenantUser, hrRoutes);
 app.use("/api/v1/settings", requireTenantUser, settingsRoutes);
-app.use("/api/v1/finance", requireTenantUser, financeRoutes);
+// app.use("/api/v1/finance", requireTenantUser, financeRoutes); // DEPRECATED: Unused and insecure (use /income and /expenses directly)
 app.use("/api/v1/certificates", requireTenantUser, certificateRoutes);
 app.use("/api/v1/fees", requireTenantUser, feesRoutes);
 app.use("/api/v1/income", requireTenantUser, incomeRoutes);
@@ -161,6 +164,7 @@ app.use("/api/v1/upload", requireTenantUser, uploadRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/teacher", requireTenantUser, teacherRoutes);
+app.use("/api/v1/reports", requireTenantUser, reportRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

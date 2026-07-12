@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notification.controller');
-const { requireSchoolContext } = require('../middleware/auth.middleware');
+const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
 
 router.use(requireSchoolContext);
 
@@ -15,5 +15,7 @@ router.route('/:id')
     .delete(notificationController.deleteNotification);
 
 router.put('/:id/read', notificationController.markAsRead);
+
+router.post('/broadcast', verifyJWT, authorizeRoles('ADMIN', 'SUPER_ADMIN'), notificationController.createBroadcastNotification);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Printer } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { DatePicker } from '../../components/ui/date-picker';
@@ -50,7 +50,89 @@ const TransferCertificate = () => {
   };
 
   const handleDownload = () => {
-    toast.info('PDF download feature coming soon!');
+    if (!preview) return;
+    const printContent = `
+      <html>
+        <head>
+          <title>Transfer Certificate - ${preview.student?.firstName || 'Student'}</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              margin: 0;
+              padding: 40px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background-color: #fff;
+              color: #000;
+            }
+            .tc-container {
+              border: 6px double #374151;
+              padding: 40px;
+              max-width: 700px;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            h1 {
+              text-align: center;
+              font-size: 24px;
+              font-weight: 900;
+              letter-spacing: 1px;
+              margin-bottom: 30px;
+              text-transform: uppercase;
+            }
+            .field-row {
+              margin: 15px 0;
+              font-size: 14px;
+              line-height: 1.6;
+              border-bottom: 1px dashed #ccc;
+              padding-bottom: 4px;
+            }
+            .field-row strong {
+              display: inline-block;
+              width: 180px;
+              color: #374151;
+            }
+            .footer-row {
+              margin-top: 50px;
+              display: flex;
+              justify-content: space-between;
+              font-size: 12px;
+              color: #4b5563;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="tc-container">
+            <h1>Transfer Certificate</h1>
+            
+            <div class="field-row"><strong>Student Name:</strong> ${preview.student?.firstName} ${preview.student?.lastName || ''}</div>
+            <div class="field-row"><strong>Admission Number:</strong> ${preview.student?.admissionNo}</div>
+            <div class="field-row"><strong>Class & Section:</strong> ${preview.student?.Class?.name || 'N/A'} - ${preview.student?.Section?.name || 'N/A'}</div>
+            <div class="field-row"><strong>Date of Birth:</strong> ${new Date(preview.student?.dob).toLocaleDateString()}</div>
+            <div class="field-row"><strong>Leaving Date:</strong> ${new Date(preview.leavingDate).toLocaleDateString()}</div>
+            <div class="field-row"><strong>Reason for Leaving:</strong> ${preview.reason || 'Family request'}</div>
+            <div class="field-row"><strong>Remarks:</strong> ${preview.remarks || 'N/A'}</div>
+            
+            <div class="footer-row">
+              <div>Issue Date: ${new Date(preview.issueDate).toLocaleDateString()}</div>
+              <div>Principal Signature: _____________________</div>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   const selectedStudent = students.find(s => s.id === formData.studentId);
@@ -134,8 +216,8 @@ const TransferCertificate = () => {
                 onClick={handleDownload}
                 className="h-7 px-3 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold hover:opacity-90 flex items-center gap-1.5"
               >
-                <Download className="w-3 h-3" />
-                Download PDF
+                <Printer className="w-3 h-3" />
+                Print / Download
               </button>
             </div>
             <div className="bg-white text-black p-8 border-2 border-gray-300 rounded-lg space-y-4">
