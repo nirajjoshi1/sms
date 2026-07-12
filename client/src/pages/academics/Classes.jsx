@@ -53,7 +53,7 @@ const Classes = () => {
     setEditingClass(cls);
     setFormData({
       name: cls.name,
-      sectionIds: cls.sections.map(s => s.id)
+      sectionIds: (cls.Section || cls.sections || []).map(s => s.id)
     });
   };
 
@@ -233,7 +233,7 @@ const Classes = () => {
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex flex-wrap gap-1">
-                          {cls.sections?.map(s => (
+                          {(cls.Section || cls.sections || []).map(s => (
                             <span key={s.id} className="px-1.5 py-0.5 bg-accent/30 text-[9px] font-bold text-foreground rounded border border-border/50">
                               {s.name}
                             </span>
