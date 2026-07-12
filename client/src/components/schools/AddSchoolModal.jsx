@@ -20,7 +20,7 @@ const AddSchoolModal = ({
             <Building2 className="w-6 h-6" />
             Register New School
           </h2>
-          <button onClick={onClose} className="hover:bg-white/10 p-1.5 rounded-lg transition">
+          <button onClick={onClose} aria-label="Close modal" className="hover:bg-white/10 p-1.5 rounded-lg transition">
             <XCircle className="w-6 h-6" />
           </button>
         </div>

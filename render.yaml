@@ -1,10 +1,7 @@
 services:
   - type: web
-    name: school-management-backend
-    runtime: node
-    rootDir: server
-    buildCommand: npm install --include=dev && npm prune --omit=dev
-    startCommand: npm start
+    name: school-management-system
+    runtime: docker
     envVars:
       - key: NODE_ENV
         value: production

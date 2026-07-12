@@ -1,39 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, CheckCircle2, ShieldCheck, ArrowUpRight, MoreHorizontal, Activity } from 'lucide-react';
+import { Building2, Users, CheckCircle2, ShieldCheck, ArrowUpRight, MoreHorizontal, Activity, Bell } from 'lucide-react';
 import api from '../../../lib/api';
 
 const SuperAdminDashboard = () => {
   const [schools, setSchools] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSchools = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/schools');
-        setSchools(res.data.data || []);
+        const [schoolsRes, notifRes] = await Promise.allSettled([
+          api.get('/schools'),
+          api.get('/notifications')
+        ]);
+        if (schoolsRes.status === 'fulfilled') setSchools(schoolsRes.value.data.data || []);
+        if (notifRes.status === 'fulfilled') setNotifications((notifRes.value.data.data || []).slice(0, 5));
       } catch (err) {
-        console.error("Failed to fetch schools", err);
+        console.error('SuperAdmin dashboard fetch failed', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchSchools();
+    fetchData();
   }, []);
+
+  const activeCount = schools.filter(s => s.isActive).length;
+  const healthPct = schools.length > 0 ? Math.round((activeCount / schools.length) * 100) : 100;
 
   const stats = [
     {
       label: 'Total Schools',
       value: loading ? '...' : schools.length.toLocaleString(),
-      change: '+1 This Month',
-      trend: 'up',
+      change: `${activeCount} Active`,
       icon: <Building2 />,
       color: 'text-primary'
     },
     {
       label: 'Active Tenants',
-      value: loading ? '...' : schools.filter(s => s.isActive).length.toLocaleString(),
+      value: loading ? '...' : activeCount.toLocaleString(),
       change: 'Active',
-      trend: 'up',
       icon: <CheckCircle2 />,
       color: 'text-primary'
     },
@@ -41,15 +47,13 @@ const SuperAdminDashboard = () => {
       label: 'Total Admin Users',
       value: loading ? '...' : schools.reduce((acc, curr) => acc + (curr.User ? curr.User.length : 0), 0).toLocaleString(),
       change: 'Accounts',
-      trend: 'neutral',
       icon: <Users />,
       color: 'text-primary'
     },
     {
       label: 'System Health',
-      value: '100%',
-      change: 'Stable',
-      trend: 'neutral',
+      value: loading ? '...' : `${healthPct}%`,
+      change: healthPct === 100 ? 'All Active' : `${schools.length - activeCount} Inactive`,
       icon: <ShieldCheck />,
       color: 'text-primary'
     },
@@ -125,16 +129,29 @@ const SuperAdminDashboard = () => {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-foreground mb-4">System Notifications</h3>
-          <div className="space-y-4">
-            <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl">
-              <p className="text-xs font-black text-primary uppercase mb-1">Alert</p>
-              <p className="text-sm text-foreground font-medium">New school registration request pending approval.</p>
-            </div>
-            <div className="p-4 bg-muted/20 border border-border rounded-xl">
-              <p className="text-xs font-black text-muted-foreground uppercase mb-1">Update</p>
-              <p className="text-sm text-muted-foreground font-medium">System backup completed successfully at 04:00 AM.</p>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-bold text-foreground">System Notifications</h3>
+          </div>
+          <div className="space-y-3">
+            {notifications.length === 0 ? (
+              <div className="text-center py-6">
+                <Bell className="w-6 h-6 mx-auto mb-2 text-muted-foreground opacity-30" />
+                <p className="text-xs text-muted-foreground font-bold">No notifications</p>
+              </div>
+            ) : (
+              notifications.map((n, i) => (
+                <div key={n.id || i} className={`p-3 rounded-xl border ${
+                  n.isRead ? 'bg-muted/20 border-border' : 'bg-primary/10 border-primary/20'
+                }`}>
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-1 ${
+                    n.isRead ? 'text-muted-foreground' : 'text-primary'
+                  }">{n.type || 'System'}</p>
+                  <p className="text-xs text-foreground font-medium">{n.message || n.title}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

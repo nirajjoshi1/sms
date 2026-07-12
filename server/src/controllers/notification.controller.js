@@ -113,3 +113,35 @@ exports.clearAllNotifications = asyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, null, "All notifications cleared"));
 });
+
+// Broadcast notification to all users in a school (Admin only)
+exports.createBroadcastNotification = asyncHandler(async (req, res) => {
+    const { title, message, type = 'info', targetRole } = req.body;
+
+    if (!title || !message) {
+        throw new ApiError(400, 'Title and message are required');
+    }
+
+    // Build the where clause for target users
+    const userWhere = { isActive: true };
+    if (targetRole) userWhere.role = targetRole;
+
+    const users = await prisma.user.findMany({
+        where: userWhere,
+        select: { id: true }
+    });
+
+    // Create one notification per user
+    const notifications = await prisma.$transaction(
+        users.map(user =>
+            prisma.notification.create({
+                data: { schoolId: req.user.schoolId, title, message, type, userId: user.id, isRead: false }
+            })
+        )
+    );
+
+    res.status(201).json(new ApiResponse(201, {
+        sent: notifications.length,
+        targetRole: targetRole || 'all'
+    }, `Notification broadcast to ${notifications.length} users successfully`));
+});

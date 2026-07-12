@@ -3,6 +3,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Offline Bank Payment Controllers
@@ -36,7 +37,7 @@ exports.createOfflineBankPayment = asyncHandler(async (req, res) => {
     const requestId = `REQ-${Date.now()}`;
 
     const payment = await prisma.offlineBankPayment.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             requestId,
             paymentDate: new Date(paymentDate),
             submitDate: new Date(submitDate),
@@ -51,24 +52,68 @@ exports.createOfflineBankPayment = asyncHandler(async (req, res) => {
 
 exports.updateOfflineBankPaymentStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { status, statusDate } = req.body;
+    const { status, statusDate, feeGroupId, feeTypeId, remarks } = req.body;
 
-    const payment = await prisma.offlineBankPayment.update({
-        where: { id },
-        data: {
-            status,
-            statusDate: statusDate ? new Date(statusDate) : new Date()
+    const existingPayment = await prisma.offlineBankPayment.findUnique({ where: { id } });
+    if (!existingPayment) {
+        throw new ApiError(404, "Offline payment not found");
+    }
+
+    // Idempotency check
+    if (existingPayment.status === status) {
+        return res.status(200).json(new ApiResponse(200, existingPayment, "Payment status is already " + status));
+    }
+    
+    if (existingPayment.status === 'Approved') {
+        throw new ApiError(400, "Cannot change status of an already approved payment");
+    }
+
+    const updatedPayment = await prisma.$transaction(async (tx) => {
+        const payment = await tx.offlineBankPayment.update({
+            where: { id },
+            data: {
+                status,
+                statusDate: statusDate ? new Date(statusDate) : new Date()
+            }
+        });
+
+        if (status === 'Approved') {
+            if (!feeGroupId || !feeTypeId) {
+                throw new ApiError(400, "feeGroupId and feeTypeId are required to approve and generate a receipt");
+            }
+            
+            // Create the official fee receipt
+            const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+            
+            await tx.feePayment.create({
+                data: { schoolId: req.user.schoolId,
+                    receiptNumber,
+                    paymentDate: payment.paymentDate,
+                    amount: payment.amount,
+                    discountAmount: 0,
+                    fineAmount: 0,
+                    netAmount: payment.amount,
+                    paymentMethod: 'Bank Transfer',
+                    remarks: remarks || `Approved offline payment ${payment.paymentId}`,
+                    studentId: payment.studentId,
+                    feeGroupId,
+                    feeTypeId,
+                    schoolId: req.user.schoolId
+                }
+            });
         }
+        return payment;
     });
 
-    res.status(200).json(new ApiResponse(200, payment, "Payment status updated successfully"));
+    res.status(200).json(new ApiResponse(200, updatedPayment, "Payment status updated successfully"));
 });
 
 // =====================================
 // Fee Group Controllers
 // =====================================
 exports.getFeeGroups = asyncHandler(async (req, res) => {
-    const groups = await prisma.feeGroup.findMany({ orderBy: { name: 'asc' }});
+    const groups = await prisma.feeGroup.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, groups, "Fee groups fetched successfully"));
 });
 
@@ -81,7 +126,7 @@ exports.createFeeGroup = asyncHandler(async (req, res) => {
     }
 
     const group = await prisma.feeGroup.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, group, "Fee group created successfully"));
 });
@@ -113,7 +158,8 @@ exports.deleteFeeGroup = asyncHandler(async (req, res) => {
 // Fee Type Controllers
 // =====================================
 exports.getFeeTypes = asyncHandler(async (req, res) => {
-    const types = await prisma.feeType.findMany({ orderBy: { name: 'asc' }});
+    const types = await prisma.feeType.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, types, "Fee types fetched successfully"));
 });
 
@@ -126,7 +172,7 @@ exports.createFeeType = asyncHandler(async (req, res) => {
     }
 
     const type = await prisma.feeType.create({
-        data: { name, code, description }
+        data: { schoolId: req.user.schoolId, name, code, description }
     });
     res.status(201).json(new ApiResponse(201, type, "Fee type created successfully"));
 });
@@ -159,6 +205,8 @@ exports.deleteFeeType = asyncHandler(async (req, res) => {
 // =====================================
 exports.getFeeMasters = asyncHandler(async (req, res) => {
     const masters = await prisma.feeMaster.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true, code: true } }
@@ -172,7 +220,7 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
     const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId } = req.body;
 
     const master = await prisma.feeMaster.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             dueDate: dueDate ? new Date(dueDate) : null,
             amount: parseFloat(amount),
             fineType: fineType || 'None',
@@ -222,7 +270,8 @@ exports.deleteFeeMaster = asyncHandler(async (req, res) => {
 // Fee Discount Controllers
 // =====================================
 exports.getFeeDiscounts = asyncHandler(async (req, res) => {
-    const discounts = await prisma.feeDiscount.findMany({ orderBy: { createdAt: 'desc' }});
+    const discounts = await prisma.feeDiscount.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { createdAt: 'desc' }});
     res.status(200).json(new ApiResponse(200, discounts, "Fee discounts fetched successfully"));
 });
 
@@ -235,7 +284,7 @@ exports.createFeeDiscount = asyncHandler(async (req, res) => {
     }
 
     const discount = await prisma.feeDiscount.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             code,
             discountType,
@@ -287,7 +336,7 @@ exports.createFeeReminder = asyncHandler(async (req, res) => {
     const { reminderType, days, isActive } = req.body;
 
     const reminder = await prisma.feeReminder.create({
-        data: { reminderType, days: parseInt(days), isActive: isActive || false }
+        data: { schoolId: req.user.schoolId, reminderType, days: parseInt(days), isActive: isActive || false }
     });
     res.status(201).json(new ApiResponse(201, reminder, "Fee reminder created successfully"));
 });
@@ -322,38 +371,57 @@ exports.collectFee = asyncHandler(async (req, res) => {
     // Generate unique receipt number
     const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-    const netAmount = parseFloat(amount) + parseFloat(fineAmount || 0) - parseFloat(discountAmount || 0);
+    // Fix floating point math with rounding to 2 decimal places
+    const rawAmount = parseFloat(amount);
+    const rawFine = parseFloat(fineAmount || 0);
+    const rawDiscount = parseFloat(discountAmount || 0);
+    const netAmount = Math.round((rawAmount + rawFine - rawDiscount) * 100) / 100;
 
-    const payment = await prisma.feePayment.create({
-        data: {
-            receiptNumber,
-            paymentDate: new Date(),
-            amount: parseFloat(amount),
-            discountAmount: parseFloat(discountAmount || 0),
-            fineAmount: parseFloat(fineAmount || 0),
-            netAmount,
-            paymentMethod,
-            remarks,
-            studentId,
-            feeGroupId,
-            feeTypeId
-        },
-        include: {
-            Student: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    admissionNo: true,
-                    Class: { select: { name: true } },
-                    Section: { select: { name: true } }
-                }
+    const payment = await prisma.$transaction(async (tx) => {
+        const newPayment = await tx.feePayment.create({
+            data: { schoolId: req.user.schoolId,
+                receiptNumber,
+                paymentDate: new Date(),
+                amount: rawAmount,
+                discountAmount: rawDiscount,
+                fineAmount: rawFine,
+                netAmount,
+                paymentMethod,
+                remarks,
+                studentId,
+                feeGroupId,
+                feeTypeId
             },
-            FeeGroup: { select: { name: true } },
-            FeeType: { select: { name: true } }
-        }
+            include: {
+                Student: {
+                    select: {
+                        firstName: true, lastName: true, admissionNo: true,
+                        Class: { select: { name: true } }, Section: { select: { name: true } }
+                    }
+                },
+                FeeGroup: { select: { name: true } },
+                FeeType: { select: { name: true } }
+            }
+        });
+        
+        // Inline Audit log inside transaction to ensure atomic write
+        await tx.auditLog.create({
+            data: { schoolId: req.user.schoolId,
+                userId: req.user.id,
+                userEmail: req.user.email,
+                action: 'COLLECT_FEE',
+                resource: 'FeePayment',
+                resourceId: newPayment.id,
+                details: JSON.stringify({ receiptNumber, amount: newPayment.amount, netAmount: newPayment.netAmount, studentId }),
+                schoolId: req.user.schoolId,
+                ipAddress: req.ip || '127.0.0.1'
+            }
+        });
+        
+        return newPayment;
     });
 
-    // Trigger notification
+    // Trigger notification (outside transaction so it doesn't block)
     try {
         const { createNotification } = require('../utils/notification');
         await createNotification({
@@ -445,6 +513,8 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 
     // Get all fee masters to calculate expected fees
     const feeMasters = await prisma.feeMaster.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true } }
@@ -453,8 +523,8 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 
     // Calculate due fees for each student
     const dueFeesData = students.map(student => {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + master.amount, 0);
-        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + payment.netAmount, 0);
+        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
+        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount), 0);
         const dueAmount = totalExpected - totalPaid;
 
         return {
@@ -480,6 +550,10 @@ exports.carryForwardFees = asyncHandler(async (req, res) => {
         throw new ApiError(400, "From session and to session are required");
     }
 
+    if (fromSession === toSession) {
+        throw new ApiError(400, "From session and to session cannot be the same");
+    }
+
     // Get students with due fees
     const students = await prisma.student.findMany({
         where: {
@@ -487,33 +561,64 @@ exports.carryForwardFees = asyncHandler(async (req, res) => {
             ...(classId && { classId })
         },
         include: {
-            FeePayment: true
+            FeePayment: {
+                where: { session: fromSession }
+            }
         }
     });
 
-    // Get all fee masters
-    const feeMasters = await prisma.feeMaster.findMany();
+    // Get all fee masters for the from-session
+    const feeMasters = await prisma.feeMaster.findMany({
+        where: { session: fromSession }
+    });
 
     let carriedForwardCount = 0;
+    const carryForwardRecords = [];
 
-    // For each student, calculate due amount and create a carry forward record
+    // For each student, calculate due amount in the from-session
     for (const student of students) {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + master.amount, 0);
-        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + payment.netAmount, 0);
+        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
+        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount || payment.amount || 0), 0);
         const dueAmount = totalExpected - totalPaid;
 
         if (dueAmount > 0) {
-            // Create a new fee payment record for the carried forward amount
-            // In a real implementation, you might want to create a separate CarryForward model
-            // For now, we'll just count the records
-            carriedForwardCount++;
+            // Check if a carry-forward record already exists for this student in toSession
+            const existing = await prisma.feePayment.findFirst({
+                where: {
+                    studentId: student.id,
+                    session: toSession,
+                    paymentMode: 'carry_forward'
+                }
+            });
+
+            if (!existing) {
+                carryForwardRecords.push({
+                    studentId: student.id,
+                    amount: dueAmount,
+                    netAmount: dueAmount,
+                    session: toSession,
+                    paymentDate: new Date(),
+                    paymentMode: 'carry_forward',
+                    receiptNo: `CF-${fromSession.replace(/\s/g, '')}-${student.id.slice(0, 6).toUpperCase()}`,
+                    status: 'Due',
+                    note: `Carried forward from session ${fromSession}`
+                });
+                carriedForwardCount++;
+            }
         }
+    }
+
+    // Bulk create all carry-forward records
+    if (carryForwardRecords.length > 0) {
+        await prisma.feePayment.createMany({ data: carryForwardRecords });
     }
 
     res.status(200).json(new ApiResponse(200, {
         studentsProcessed: students.length,
         feesCarriedForward: carriedForwardCount,
         fromSession,
-        toSession
-    }, `Fees carried forward successfully for ${carriedForwardCount} students`));
+        toSession,
+        alreadyExisted: students.length - carriedForwardCount
+    }, `Fees carried forward successfully for ${carriedForwardCount} students from ${fromSession} to ${toSession}`));
 });
+

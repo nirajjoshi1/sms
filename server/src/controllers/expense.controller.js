@@ -2,12 +2,15 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Expense Head Controllers
 // =====================================
 exports.getExpenseHeads = asyncHandler(async (req, res) => {
     const heads = await prisma.expenseHead.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     res.status(200).json(new ApiResponse(200, heads, "Expense heads fetched successfully"));
@@ -26,7 +29,7 @@ exports.createExpenseHead = asyncHandler(async (req, res) => {
     }
 
     const head = await prisma.expenseHead.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, head, "Expense head created successfully"));
 });
@@ -95,7 +98,7 @@ exports.createExpense = asyncHandler(async (req, res) => {
     }
 
     const expense = await prisma.expense.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             invoiceNumber,
             date: new Date(date),
@@ -107,6 +110,16 @@ exports.createExpense = asyncHandler(async (req, res) => {
         include: {
             ExpenseHead: { select: { name: true } }
         }
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADD_EXPENSE',
+        resource: 'Expense',
+        resourceId: expense.id,
+        details: { name, amount: expense.amount, expenseHeadId },
+        schoolId: req.user.schoolId
     });
 
     res.status(201).json(new ApiResponse(201, expense, "Expense added successfully"));

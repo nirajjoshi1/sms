@@ -213,7 +213,7 @@ exports.generatePayroll = asyncHandler(async (req, res) => {
     const { staffId, month, year, netSalary } = req.body;
     
     const payroll = await prisma.payroll.create({
-        data: { staffId, month, year: parseInt(year), netSalary }
+        data: { schoolId: req.user.schoolId, staffId, month, year: parseInt(year), netSalary }
     });
     
     res.status(201).json(new ApiResponse(201, payroll, "Payroll generated successfully"));
@@ -223,12 +223,13 @@ exports.generatePayroll = asyncHandler(async (req, res) => {
 // Leave Controllers
 // =====================================
 exports.getLeaveTypes = asyncHandler(async (req, res) => {
-    const types = await prisma.leaveType.findMany({ orderBy: { name: 'asc' }});
+    const types = await prisma.leaveType.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, types, "Leave types fetched successfully"));
 });
 
 exports.createLeaveType = asyncHandler(async (req, res) => {
-    const type = await prisma.leaveType.create({ data: { name: req.body.name }});
+    const type = await prisma.leaveType.create({ data: { schoolId: req.user.schoolId, name: req.body.name }});
     res.status(201).json(new ApiResponse(201, type, "Leave type created successfully"));
 });
 
@@ -270,7 +271,7 @@ exports.createLeaveRequest = asyncHandler(async (req, res) => {
     }
 
     const leave = await prisma.leaveRequest.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             staffId,
             fromDate: from,
             toDate: to,
@@ -356,6 +357,8 @@ exports.deleteLeaveRequest = asyncHandler(async (req, res) => {
 // =====================================
 exports.getTeacherRatings = asyncHandler(async (req, res) => {
     const ratings = await prisma.teacherRating.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             Staff: { select: { firstName: true, lastName: true, staffId: true }},
             Student: { select: { firstName: true, lastName: true }}
@@ -366,7 +369,7 @@ exports.getTeacherRatings = asyncHandler(async (req, res) => {
 });
 
 exports.createTeacherRating = asyncHandler(async (req, res) => {
-    const rating = await prisma.teacherRating.create({ data: { ...req.body }});
+    const rating = await prisma.teacherRating.create({ data: { schoolId: req.user.schoolId, ...req.body }});
     res.status(201).json(new ApiResponse(201, rating, "Rating submitted successfully"));
 });
 
@@ -374,7 +377,8 @@ exports.createTeacherRating = asyncHandler(async (req, res) => {
 // Department & Designation Controllers
 // =====================================
 exports.getDepartments = asyncHandler(async (req, res) => {
-    const departments = await prisma.department.findMany({ orderBy: { name: 'asc' }});
+    const departments = await prisma.department.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, departments, "Departments fetched successfully"));
 });
 
@@ -384,7 +388,7 @@ exports.createDepartment = asyncHandler(async (req, res) => {
     if (existing) {
         throw new ApiError(400, "Department already exists in this school");
     }
-    const dept = await prisma.department.create({ data: { name } });
+    const dept = await prisma.department.create({ data: { schoolId: req.user.schoolId, name } });
     res.status(201).json(new ApiResponse(201, dept, "Department created successfully"));
 });
 
@@ -409,7 +413,8 @@ exports.deleteDepartment = asyncHandler(async (req, res) => {
 });
 
 exports.getDesignations = asyncHandler(async (req, res) => {
-    const designations = await prisma.designation.findMany({ orderBy: { name: 'asc' } });
+    const designations = await prisma.designation.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' } });
     res.status(200).json(new ApiResponse(200, designations, "Designations fetched successfully"));
 });
 
@@ -419,7 +424,7 @@ exports.createDesignation = asyncHandler(async (req, res) => {
     if (existing) {
         throw new ApiError(400, "Designation already exists in this school");
     }
-    const desig = await prisma.designation.create({ data: { name } });
+    const desig = await prisma.designation.create({ data: { schoolId: req.user.schoolId, name } });
     res.status(201).json(new ApiResponse(201, desig, "Designation created successfully"));
 });
 

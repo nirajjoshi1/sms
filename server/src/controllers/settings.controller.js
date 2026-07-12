@@ -134,7 +134,7 @@ exports.updateSetting = asyncHandler(async (req, res) => {
         });
     } else {
         setting = await prisma.systemSetting.create({
-            data: { key, value: String(value) }
+            data: { schoolId: req.user.schoolId, key, value: String(value) }
         });
     }
 
@@ -164,6 +164,8 @@ exports.updateGeneralSettings = asyncHandler(async (req, res) => {
 // =====================================
 exports.getSessions = asyncHandler(async (req, res) => {
     const sessions = await prisma.academicSession.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { startDate: 'desc' }
     });
     res.status(200).json(new ApiResponse(200, sessions, "Sessions fetched successfully"));
@@ -186,7 +188,7 @@ exports.createSession = asyncHandler(async (req, res) => {
     }
 
     const session = await prisma.academicSession.create({
-        data: { name, startDate: new Date(startDate), endDate: new Date(endDate), isCurrent }
+        data: { schoolId: req.user.schoolId, name, startDate: new Date(startDate), endDate: new Date(endDate), isCurrent }
     });
 
     res.status(201).json(new ApiResponse(201, session, "Session created successfully"));
@@ -438,19 +440,28 @@ exports.updatePrintSettings = asyncHandler(async (req, res) => {
 // =====================================
 exports.getBackups = asyncHandler(async (req, res) => {
     const backups = await prisma.backup.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { createdAt: 'desc' }
     });
     res.status(200).json(new ApiResponse(200, backups, "Backups fetched successfully"));
 });
 
 exports.createBackup = asyncHandler(async (req, res) => {
-    await fs.mkdir(backupDir, { recursive: true });
+    const schoolDir = req.user.schoolId ? path.join(backupDir, req.user.schoolId) : path.join(backupDir, 'global');
+    await fs.mkdir(schoolDir, { recursive: true });
 
     const filename = `backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    const filePath = path.join(backupDir, filename);
+    const filePath = path.join(schoolDir, filename);
     const data = {};
 
     for (const model of Prisma.dmmf.datamodel.models) {
+        // Skip System/Platform models that are sensitive or not tenant-owned for standard admins
+        const systemModels = ['School', 'User', 'Backup', 'AuditLog'];
+        if (req.user.role !== 'SUPER_ADMIN' && systemModels.includes(model.name)) {
+            continue;
+        }
+
         const delegate = prisma[getDelegateName(model.name)];
         if (delegate?.findMany) {
             data[model.name] = await delegate.findMany();
@@ -467,7 +478,7 @@ exports.createBackup = asyncHandler(async (req, res) => {
     const stats = await fs.stat(filePath);
 
     const backup = await prisma.backup.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             filename,
             fileSize: stats.size,
             filePath
@@ -483,6 +494,14 @@ exports.downloadBackup = asyncHandler(async (req, res) => {
     const backup = await prisma.backup.findUnique({ where: { id } });
     if (!backup) {
         throw new ApiError(404, "Backup not found");
+    }
+
+    // Path traversal safety check
+    const schoolDir = req.user.schoolId ? path.join(backupDir, req.user.schoolId) : path.join(backupDir, 'global');
+    const normalizedTarget = path.normalize(backup.filePath);
+    const normalizedPrefix = path.normalize(schoolDir);
+    if (!normalizedTarget.startsWith(normalizedPrefix)) {
+        throw new ApiError(403, "Access Denied: Path traversal or cross-tenant backup access detected.");
     }
 
     try {
@@ -510,6 +529,14 @@ exports.deleteBackup = asyncHandler(async (req, res) => {
     const backup = await prisma.backup.findUnique({ where: { id } });
     if (!backup) {
         throw new ApiError(404, "Backup not found");
+    }
+
+    // Path traversal safety check
+    const schoolDir = req.user.schoolId ? path.join(backupDir, req.user.schoolId) : path.join(backupDir, 'global');
+    const normalizedTarget = path.normalize(backup.filePath);
+    const normalizedPrefix = path.normalize(schoolDir);
+    if (!normalizedTarget.startsWith(normalizedPrefix)) {
+        throw new ApiError(403, "Access Denied: Path traversal or cross-tenant backup access detected.");
     }
 
     await prisma.backup.delete({ where: { id } });

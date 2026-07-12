@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const cmsController = require('../controllers/cms.controller');
-const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { verifyJWT, requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 
 // All routes require authentication and school context
 router.use(verifyJWT);
@@ -10,71 +11,71 @@ router.use(requireSchoolContext);
 // Event routes
 router.route('/events')
     .get(cmsController.getEvents)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createEvent);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createEvent);
 
 router.route('/events/:id')
     .get(cmsController.getEventById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateEvent)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteEvent);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateEvent)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteEvent);
 
 // Gallery routes
 router.route('/gallery')
     .get(cmsController.getGalleryImages)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createGalleryImage);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createGalleryImage);
 
 router.route('/gallery/:id')
     .get(cmsController.getGalleryImageById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateGalleryImage)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteGalleryImage);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateGalleryImage)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteGalleryImage);
 
 // News routes
 router.route('/news')
     .get(cmsController.getNews)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createNews);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createNews);
 
 router.route('/news/:id')
     .get(cmsController.getNewsById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateNews)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteNews);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateNews)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteNews);
 
 // Media Manager routes
 router.route('/media')
     .get(cmsController.getMediaFiles)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.uploadMediaFile);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.uploadMediaFile);
 
 router.route('/media/:id')
     .get(cmsController.getMediaFileById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateMediaFile)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteMediaFile);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateMediaFile)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteMediaFile);
 
 // Pages routes
 router.route('/pages')
     .get(cmsController.getPages)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createPage);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createPage);
 
 router.route('/pages/:id')
     .get(cmsController.getPageById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updatePage)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deletePage);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updatePage)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deletePage);
 
 // Menu routes
 router.route('/menus')
     .get(cmsController.getMenus)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createMenu);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createMenu);
 
 router.route('/menus/:id')
     .get(cmsController.getMenuById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateMenu)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteMenu);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateMenu)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteMenu);
 
 // Banner routes
 router.route('/banners')
     .get(cmsController.getBanners)
-    .post(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.createBanner);
+    .post(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.createBanner);
 
 router.route('/banners/:id')
     .get(cmsController.getBannerById)
-    .put(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.updateBanner)
-    .delete(authorizeRoles('SUPER_ADMIN', 'ADMIN'), cmsController.deleteBanner);
+    .put(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.updateBanner)
+    .delete(requirePermission(PERMISSIONS.CMS_MANAGE), cmsController.deleteBanner);
 
 module.exports = router;

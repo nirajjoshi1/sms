@@ -4,6 +4,7 @@ const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
 const { cloudinary } = require('../config/cloudinary');
+const { logAudit } = require('../utils/audit');
 
 // Get all students with pagination and search
 exports.getStudents = asyncHandler(async (req, res) => {
@@ -13,6 +14,7 @@ exports.getStudents = asyncHandler(async (req, res) => {
 
     const where = {
         isDisabled: false,
+        schoolId: req.user.schoolId,
         ...(search && {
             OR: [
                 { firstName: { contains: search, mode: 'insensitive' } },
@@ -59,6 +61,7 @@ exports.getDisabledStudents = asyncHandler(async (req, res) => {
 
     const where = {
         isDisabled: true,
+        schoolId: req.user.schoolId,
         ...(search && {
             OR: [
                 { firstName: { contains: search, mode: 'insensitive' } },
@@ -104,9 +107,7 @@ exports.admitStudent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Missing required fields");
     }
 
-    // Auto-generate an admission number while preserving an existing prefix
-    // and zero-padding (for example, MGS-010 -> MGS-011). parseInt cannot be
-    // used directly because prefixed admission numbers evaluate to NaN.
+    // Preserve prefixes and padding, e.g. MGS-010 -> MGS-011.
     const existingStudents = await prisma.student.findMany({
         select: { admissionNo: true }
     });
@@ -114,11 +115,9 @@ exports.admitStudent = asyncHandler(async (req, res) => {
     let highestNumber = 0;
     let selectedPrefix = '';
     let selectedWidth = 1;
-
     for (const student of existingStudents) {
         const match = student.admissionNo?.trim().match(/^(.*?)(\d+)$/);
         if (!match) continue;
-
         const numericPart = Number(match[2]);
         if (Number.isSafeInteger(numericPart) && numericPart >= highestNumber) {
             highestNumber = numericPart;
@@ -126,9 +125,7 @@ exports.admitStudent = asyncHandler(async (req, res) => {
             selectedWidth = match[2].length;
         }
     }
-
-    const nextNumber = String(highestNumber + 1).padStart(selectedWidth, '0');
-    const admissionNo = `${selectedPrefix}${nextNumber}`;
+    const admissionNo = `${selectedPrefix}${String(highestNumber + 1).padStart(selectedWidth, '0')}`;
 
     // Handle file uploads from multer
     let photoUrl = null;
@@ -170,6 +167,7 @@ exports.admitStudent = asyncHandler(async (req, res) => {
             guardianRelation: guardianRelation || null,
             guardianPhone,
             guardianAddress: guardianAddress || null,
+            schoolId: req.user.schoolId,
             updatedAt: new Date()
         },
         include: {
@@ -191,6 +189,15 @@ exports.admitStudent = asyncHandler(async (req, res) => {
     } catch (err) {
         console.error("Failed to trigger admission notification:", err);
     }
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADMIT_STUDENT',
+        resource: 'Student',
+        resourceId: student.id,
+        details: { admissionNo, firstName, lastName, classId, sectionId },
+        schoolId: req.user.schoolId
+    });
 
     res.status(201).json(new ApiResponse(201, student, `Student admitted successfully with Admission No: ${admissionNo}`));
 });
@@ -210,7 +217,7 @@ exports.getStudentDetails = asyncHandler(async (req, res) => {
         }
     });
 
-    if (!student) throw new ApiError(404, "Student not found");
+    if (!student || student.schoolId !== req.user.schoolId) throw new ApiError(404, "Student not found");
 
     res.status(200).json(new ApiResponse(200, student, "Student details fetched"));
 });
@@ -226,9 +233,9 @@ exports.updateStudent = asyncHandler(async (req, res) => {
         guardianIs, guardianName, guardianRelation, guardianPhone, guardianAddress
     } = req.body;
 
-    // Check if student exists
+    // Check if student exists and belongs to school
     const existingStudent = await prisma.student.findUnique({ where: { id } });
-    if (!existingStudent) throw new ApiError(404, "Student not found");
+    if (!existingStudent || existingStudent.schoolId !== req.user.schoolId) throw new ApiError(404, "Student not found");
 
     // Check if admission number is being changed and if it conflicts
     if (admissionNo && admissionNo !== existingStudent.admissionNo) {
@@ -307,7 +314,7 @@ exports.deleteStudent = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const student = await prisma.student.findUnique({ where: { id } });
-    if (!student) throw new ApiError(404, "Student not found");
+    if (!student || student.schoolId !== req.user.schoolId) throw new ApiError(404, "Student not found");
 
     await prisma.student.update({
         where: { id },
@@ -322,7 +329,10 @@ exports.toggleStudentStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { isDisabled, disableReasonId } = req.body;
 
-    const student = await prisma.student.update({
+    const student = await prisma.student.findUnique({ where: { id } });
+    if (!student || student.schoolId !== req.user.schoolId) throw new ApiError(404, "Student not found");
+
+    const updatedStudent = await prisma.student.update({
         where: { id },
         data: {
             isDisabled,
@@ -335,7 +345,7 @@ exports.toggleStudentStatus = asyncHandler(async (req, res) => {
         }
     });
 
-    res.status(200).json(new ApiResponse(200, student, `Student status updated to ${isDisabled ? 'disabled' : 'enabled'}`));
+    res.status(200).json(new ApiResponse(200, updatedStudent, `Student status updated to ${isDisabled ? 'disabled' : 'enabled'}`));
 });
 
 // Bulk delete students
@@ -347,7 +357,7 @@ exports.bulkDeleteStudents = asyncHandler(async (req, res) => {
     }
 
     const result = await prisma.student.updateMany({
-        where: { id: { in: studentIds } },
+        where: { id: { in: studentIds }, schoolId: req.user.schoolId },
         data: { isDisabled: true }
     });
 

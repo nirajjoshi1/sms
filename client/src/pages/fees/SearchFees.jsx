@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
-import { DatePicker } from "@/components/ui/date-picker";
 
 const SearchFees = () => {
   const [students, setStudents] = useState([]);
@@ -47,6 +46,29 @@ const SearchFees = () => {
     fetchData();
   }, [searchQuery, classFilter, dateFrom, dateTo]);
 
+  const exportCSV = () => {
+    if (!filteredPayments.length) return toast.info('No data to export');
+    const headers = ['Student Name', 'Admission No', 'Class', 'Amount', 'Receipt No', 'Payment Date', 'Method'];
+    const rows = filteredPayments.map(p => [
+      `${p.Student?.firstName || ''} ${p.Student?.lastName || ''}`.trim(),
+      p.Student?.admissionNo || '',
+      p.Student?.Class?.name || '',
+      p.amount || 0,
+      p.receiptNo || '',
+      p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : '',
+      p.paymentMode || ''
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fee-payments-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Report exported successfully');
+  };
+
   const filteredPayments = payments.filter(p => {
     const studentName = `${p.Student?.firstName} ${p.Student?.lastName}`.toLowerCase();
     const admissionNo = p.Student?.admissionNo?.toLowerCase() || '';
@@ -69,10 +91,11 @@ const SearchFees = () => {
           <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">Search and view fee payment history</p>
         </div>
         <button
+          onClick={exportCSV}
           className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold hover:opacity-90 transition-all flex items-center gap-2 w-fit"
         >
           <Download className="w-3 h-3" />
-          Export Report
+          Export CSV
         </button>
       </div>
 

@@ -27,6 +27,7 @@ const dashboardRoutes = require("./src/routes/dashboard.routes");
 const notificationRoutes = require("./src/routes/notification.routes");
 const teacherRoutes = require("./src/routes/teacher.routes");
 const schoolRequestRoutes = require("./src/routes/schoolRequest.routes");
+const reportRoutes = require("./src/routes/report.routes");
 
 const app = express();
 
@@ -103,21 +104,11 @@ app.get("/health", (req, res) => {
     res.status(200).json({
         status: "ok",
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || "development"
+        uptime: process.uptime()
     });
 });
 
-// Debug endpoint to see what routes are registered
-app.get("/api/v1/debug", (req, res) => {
-    res.json({
-        url: req.url,
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path,
-        method: req.method
-    });
-});
+// Debug endpoint completely removed as per security audit requirements
 
 // API status endpoint
 app.get("/api/v1", (req, res) => {
@@ -129,11 +120,44 @@ app.get("/api/v1", (req, res) => {
     });
 });
 
+// CSRF Protection for API (Enforce JSON or AJAX for mutations)
+const csrfProtection = (req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        const contentType = req.headers['content-type'] || '';
+        const requestedWith = req.headers['x-requested-with'] || '';
+        
+        // Allow multipart/form-data for uploads, but strictly require x-requested-with header for CSRF
+        if (contentType.includes('multipart/form-data') && requestedWith !== 'XMLHttpRequest') {
+             return res.status(403).json({ success: false, message: 'CSRF token missing or incorrect headers for file upload.' });
+        }
+        
+        // For other endpoints, enforce application/json
+        if (!contentType.includes('application/json') && !contentType.includes('multipart/form-data')) {
+            return res.status(403).json({ success: false, message: 'Invalid Content-Type. CSRF protection requires application/json.' });
+        }
+    }
+    next();
+};
+
+app.use(csrfProtection);
+
 // Conditional rate limiting middleware wrapper
 const conditionalAuthLimiter = process.env.NODE_ENV === 'production' ? authLimiter : (req, res, next) => next();
 const conditionalApiLimiter = process.env.NODE_ENV === 'production' ? apiLimiter : (req, res, next) => next();
 
+// Reset password rate limiter
+const resetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 requests per hour
+    message: "Too many password reset attempts, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+const conditionalResetLimiter = process.env.NODE_ENV === 'production' ? resetLimiter : (req, res, next) => next();
+
 // Public Routes (no auth required) - with rate limiting
+app.use("/api/v1/auth/forgot-password", conditionalResetLimiter);
+app.use("/api/v1/auth/reset-password", conditionalResetLimiter);
 app.use("/api/v1/auth", conditionalAuthLimiter, authRoutes);
 app.use("/api/v1/school-requests", schoolRequestRoutes);
 
@@ -150,7 +174,7 @@ app.use("/api/v1/academics", requireTenantUser, academicsRoutes);
 app.use("/api/v1/student-setup", requireTenantUser, studentSetupRoutes);
 app.use("/api/v1/hr", requireTenantUser, hrRoutes);
 app.use("/api/v1/settings", requireTenantUser, settingsRoutes);
-app.use("/api/v1/finance", requireTenantUser, financeRoutes);
+// app.use("/api/v1/finance", requireTenantUser, financeRoutes); // DEPRECATED: Unused and insecure (use /income and /expenses directly)
 app.use("/api/v1/certificates", requireTenantUser, certificateRoutes);
 app.use("/api/v1/fees", requireTenantUser, feesRoutes);
 app.use("/api/v1/income", requireTenantUser, incomeRoutes);
@@ -161,6 +185,7 @@ app.use("/api/v1/upload", requireTenantUser, uploadRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/teacher", requireTenantUser, teacherRoutes);
+app.use("/api/v1/reports", requireTenantUser, reportRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

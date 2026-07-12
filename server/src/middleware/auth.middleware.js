@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
+const { ROLE_PERMISSIONS } = require('../config/permissions');
 
 // ==========================================
 // JWT Verification Middleware
@@ -23,7 +24,7 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true }
+        select: { id: true, name: true, email: true, role: true, isActive: true, schoolId: true, tokenVersion: true }
     });
 
     if (!user) {
@@ -32,6 +33,11 @@ exports.verifyJWT = asyncHandler(async (req, res, next) => {
 
     if (!user.isActive) {
         throw new ApiError(403, "Your account has been disabled. Contact Super Admin.");
+    }
+
+    // Verify tokenVersion to support session revocation/sign-outs
+    if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) {
+        throw new ApiError(401, "Unauthorized - Session has been revoked. Please log in again.");
     }
 
     req.user = user;
@@ -74,9 +80,6 @@ exports.requireSchoolContext = (req, res, next) => {
     // Auto-inject schoolId into body/query if not present, to ensure controllers use the correct scope
     if (req.user.schoolId) {
         if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-            // For multipart/form-data requests (such as image uploads), multer has
-            // not populated req.body yet when this middleware runs.
-            // Only inspect/inject tenant data when a parsed request body exists.
             if (!req.body || typeof req.body !== 'object') {
                 return next();
             }
@@ -100,11 +103,24 @@ exports.requireTenantUser = (req, res, next) => {
     }
 
     if (req.user.role === 'SUPER_ADMIN') {
-        throw new ApiError(403, "Super Admin cannot access school tenant routes");
+        throw new ApiError(403, "Super Admin is a platform role and cannot access school tenant routes");
     }
 
     if (!req.user.schoolId) {
         throw new ApiError(403, "Access denied - No school context found for user");
+    }
+
+    next();
+};
+
+// Ensure the user is a platform-level user (Super Admin)
+exports.requirePlatformUser = (req, res, next) => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN') {
+        throw new ApiError(403, "Access denied - Platform level access required");
     }
 
     next();
@@ -125,4 +141,22 @@ exports.requireTeacherAssignment = (req, res, next) => {
     }
     
     next();
+};
+
+// ==========================================
+// Granular Permission Middleware
+// ==========================================
+exports.requirePermission = (permission) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            throw new ApiError(401, "Unauthorized");
+        }
+
+        const permissions = ROLE_PERMISSIONS[req.user.role] || [];
+        if (!permissions.includes(permission)) {
+            throw new ApiError(403, `Access denied - Required permission: ${permission}`);
+        }
+
+        next();
+    };
 };

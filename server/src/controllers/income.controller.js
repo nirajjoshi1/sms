@@ -2,12 +2,15 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { logAudit } = require('../utils/audit');
 
 // =====================================
 // Income Head Controllers
 // =====================================
 exports.getIncomeHeads = asyncHandler(async (req, res) => {
     const heads = await prisma.incomeHead.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     res.status(200).json(new ApiResponse(200, heads, "Income heads fetched successfully"));
@@ -26,7 +29,7 @@ exports.createIncomeHead = asyncHandler(async (req, res) => {
     }
 
     const head = await prisma.incomeHead.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, head, "Income head created successfully"));
 });
@@ -95,7 +98,7 @@ exports.createIncome = asyncHandler(async (req, res) => {
     }
 
     const income = await prisma.income.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             invoiceNumber,
             date: new Date(date),
@@ -107,6 +110,16 @@ exports.createIncome = asyncHandler(async (req, res) => {
         include: {
             IncomeHead: { select: { name: true } }
         }
+    });
+
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'ADD_INCOME',
+        resource: 'Income',
+        resourceId: income.id,
+        details: { name, amount: income.amount, incomeHeadId },
+        schoolId: req.user.schoolId
     });
 
     res.status(201).json(new ApiResponse(201, income, "Income added successfully"));

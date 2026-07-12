@@ -134,8 +134,8 @@ const CustomDatePicker = ({ value, onChange, label, placeholder = "Select Date" 
                   <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-300 ${showYearPicker ? 'rotate-180' : ''}`} />
                 </button>
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={handlePrevMonth} className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground transition-all"><ChevronLeft className="w-5 h-5" /></button>
-                  <button type="button" onClick={handleNextMonth} className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground transition-all"><ChevronRight className="w-5 h-5" /></button>
+                  <button type="button" aria-label="Previous month" onClick={handlePrevMonth} className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                  <button type="button" aria-label="Next month" onClick={handleNextMonth} className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground transition-all"><ChevronRight className="w-5 h-5" /></button>
                 </div>
               </div>
 

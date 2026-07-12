@@ -50,7 +50,7 @@ exports.createSchoolWithAdmin = asyncHandler(async (req, res) => {
     // Create school and admin in a transaction
     const result = await prisma.$transaction(async (tx) => {
         const school = await tx.school.create({
-            data: {
+            data: { schoolId: req.user.schoolId,
                 name: schoolName,
                 email: schoolEmail,
                 address: schoolAddress,
@@ -59,7 +59,7 @@ exports.createSchoolWithAdmin = asyncHandler(async (req, res) => {
         });
 
         const admin = await tx.user.create({
-            data: {
+            data: { schoolId: req.user.schoolId,
                 name: adminName,
                 email: adminEmail,
                 password: hashedPassword,
@@ -81,6 +81,8 @@ exports.createSchoolWithAdmin = asyncHandler(async (req, res) => {
 // @access  Private (Super Admin only)
 exports.getAllSchools = asyncHandler(async (req, res) => {
     const schools = await prisma.school.findMany({
+        where: { schoolId: req.user.schoolId },
+
         include: {
             User: {
                 select: {
