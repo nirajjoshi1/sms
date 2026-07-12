@@ -3,9 +3,12 @@ import { Plus, X, Edit2, Trash2, Calendar, Clock } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const ClassTimetable = () => {
+  const confirm = useConfirm();
+
   const [timetables, setTimetables] = useState([]);
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
@@ -156,7 +159,7 @@ const ClassTimetable = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this timetable entry?')) return;
+    if (!await confirm('Are you sure you want to delete this timetable entry?')) return;
     try {
       await api.delete(`/academics/timetable/${id}`);
       toast.success('Timetable entry deleted');

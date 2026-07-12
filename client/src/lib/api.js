@@ -6,6 +6,9 @@ const baseURL = configuredApiUrl || '/api/v1';
 const api = axios.create({
   baseURL,
   withCredentials: true, // send cookies automatically
+  headers: {
+    'X-Requested-With': 'XMLHttpRequest'
+  }
 });
 
 // Automatically attach token from localStorage as fallback removed since we are using HttpOnly cookies.

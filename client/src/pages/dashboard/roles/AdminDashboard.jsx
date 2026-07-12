@@ -38,8 +38,11 @@ import {
 } from 'recharts';
 import { useAuth } from '../../../context/AuthContext';
 import { useDashboardStats } from '../../../hooks/useDashboardStats';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 const AdminDashboard = () => {
+  const confirm = useConfirm();
+
   const { user } = useAuth();
 
   const [timeFilter, setTimeFilter] = React.useState('6months');
@@ -612,8 +615,8 @@ const AdminDashboard = () => {
                                 Edit Student
                               </button>
                               <button
-                                onClick={() => {
-                                  if (window.confirm('Disable this student?')) {
+                                onClick={async () => {
+                                  if (await confirm('Disable this student?')) {
                                     // API call to disable student
                                     setStudentMenuOpen(null);
                                   }
@@ -625,8 +628,8 @@ const AdminDashboard = () => {
                               </button>
                               <div className="border-t border-border my-1" />
                               <button
-                                onClick={() => {
-                                  if (window.confirm('Delete this student permanently?')) {
+                                onClick={async () => {
+                                  if (await confirm('Delete this student permanently?')) {
                                     // API call to delete student
                                     setStudentMenuOpen(null);
                                   }

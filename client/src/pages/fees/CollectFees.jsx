@@ -3,17 +3,23 @@ import { Search, DollarSign, Banknote } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
+import { printReceipt } from '../../lib/printReceipt';
 
 const CollectFees = () => {
   const [students, setStudents] = useState([]);
   const [feeGroups, setFeeGroups] = useState([]);
   const [feeTypes, setFeeTypes] = useState([]);
+  const [feeMasters, setFeeMasters] = useState([]);
+  const [feeDiscounts, setFeeDiscounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const confirm = useConfirm();
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [selectedDiscountId, setSelectedDiscountId] = useState('');
 
   const [formData, setFormData] = useState({
     feeGroupId: '',
@@ -29,14 +35,18 @@ const CollectFees = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [studentsRes, groupsRes, typesRes] = await Promise.all([
+      const [studentsRes, groupsRes, typesRes, mastersRes, discountsRes] = await Promise.all([
         api.get('/students?isDisabled=false'),
         api.get('/fees/groups'),
-        api.get('/fees/types')
+        api.get('/fees/types'),
+        api.get('/fees/masters'),
+        api.get('/fees/discounts')
       ]);
       setStudents(studentsRes.data.data || []);
       setFeeGroups(groupsRes.data.data || []);
       setFeeTypes(typesRes.data.data || []);
+      setFeeMasters(mastersRes.data.data || []);
+      setFeeDiscounts(discountsRes.data.data || []);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to fetch data'));
     } finally {
@@ -47,6 +57,49 @@ const CollectFees = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (formData.feeGroupId && formData.feeTypeId && feeMasters.length > 0) {
+      const master = feeMasters.find(
+        m => m.feeGroupId === formData.feeGroupId && 
+             m.feeTypeId === formData.feeTypeId &&
+             (!m.classId || m.classId === selectedStudent?.classId)
+      );
+      if (master) {
+        let fineAmount = 0;
+        if (master.dueDate && new Date(master.dueDate) < new Date()) {
+          if (master.fineType === 'Percentage') {
+            fineAmount = (parseFloat(master.amount) * parseFloat(master.percentage || 0)) / 100;
+          } else if (master.fineType === 'FixAmount' || master.fineType === 'FixedAmount') {
+            fineAmount = parseFloat(master.fixAmount || 0);
+          }
+        }
+        setFormData(prev => ({
+          ...prev,
+          amount: master.amount,
+          fine: fineAmount > 0 ? fineAmount.toFixed(2) : prev.fine
+        }));
+      }
+    }
+  }, [formData.feeGroupId, formData.feeTypeId, feeMasters, selectedStudent?.classId]);
+
+  useEffect(() => {
+    if (selectedDiscountId && selectedDiscountId !== 'manual') {
+      const discount = feeDiscounts.find(d => d.id === selectedDiscountId);
+      if (discount && formData.amount) {
+        let discountAmount = 0;
+        if (discount.discountType === 'Percentage') {
+          discountAmount = (parseFloat(formData.amount) * parseFloat(discount.percentage || 0)) / 100;
+        } else if (discount.discountType === 'FixAmount' || discount.discountType === 'FixedAmount') {
+          discountAmount = parseFloat(discount.amount || discount.fixAmount || 0);
+        }
+        setFormData(prev => ({ ...prev, discount: discountAmount > 0 ? discountAmount.toFixed(2) : '' }));
+      }
+    } else if (!selectedDiscountId) {
+      // Clear discount if 'Select Discount' is chosen
+      setFormData(prev => ({ ...prev, discount: '' }));
+    }
+  }, [selectedDiscountId, formData.amount, feeDiscounts]);
 
   const filteredStudents = students.filter(s => {
     const fullName = `${s.firstName} ${s.lastName}`.toLowerCase();
@@ -87,6 +140,25 @@ const CollectFees = () => {
         remarks: formData.remarks
       });
       const receiptNumber = response.data.data?.receiptNumber;
+      
+      const wantReceipt = await confirm(
+        'Fee collected successfully!',
+        `Receipt No: ${receiptNumber}. Do you want to print/download this receipt?`
+      );
+
+      if (wantReceipt) {
+        printReceipt({
+          studentName: `${selectedStudent.firstName} ${selectedStudent.lastName}`,
+          admissionNo: selectedStudent.admissionNo,
+          className: selectedStudent.Class?.name,
+          receiptNo: receiptNumber,
+          date: new Date(),
+          amount: parseFloat(formData.amount),
+          paymentMethod: formData.paymentMethod,
+          feeType: feeTypes.find(t => t.id === formData.feeTypeId)?.name
+        });
+      }
+
       toast.success(`Fee collected successfully! Receipt: ${receiptNumber}`);
       // Reset form
       setSelectedStudent(null);
@@ -213,15 +285,31 @@ const CollectFees = () => {
 
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Discount</label>
-                <input
-                  type="number"
-                  value={formData.discount}
-                  onChange={(e) => setFormData({...formData, discount: e.target.value})}
-                  placeholder="0.00"
-                  className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
-                  min="0"
-                  step="0.01"
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={selectedDiscountId}
+                    onChange={(e) => setSelectedDiscountId(e.target.value)}
+                    className="w-1/2 h-9 bg-muted/30 border border-border rounded-lg px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+                  >
+                    <option value="">Select...</option>
+                    <option value="manual">Manual</option>
+                    {feeDiscounts.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.discountType === 'Percentage' ? d.percentage + '%' : '₹' + parseFloat(d.amount || d.fixAmount || 0)})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    value={formData.discount}
+                    onChange={(e) => setFormData({...formData, discount: e.target.value})}
+                    placeholder="0.00"
+                    disabled={selectedDiscountId !== 'manual' && selectedDiscountId !== ''}
+                    className="w-1/2 h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -243,8 +331,8 @@ const CollectFees = () => {
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Payment Method</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: 'Cash', icon: Banknote },
-                  { value: 'Bank Transfer', icon: DollarSign }
+                  { value: 'Cash', label: 'Cash', icon: Banknote },
+                  { value: 'BankTransfer', label: 'Bank Transfer', icon: DollarSign }
                 ].map(method => (
                   <button
                     key={method.value}
@@ -257,13 +345,13 @@ const CollectFees = () => {
                     }`}
                   >
                     <method.icon className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">{method.value}</span>
+                    <span className="text-[10px] font-bold">{method.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {formData.paymentMethod === 'Bank Transfer' && (
+            {formData.paymentMethod === 'BankTransfer' && (
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Transaction/Reference ID</label>
                 <input

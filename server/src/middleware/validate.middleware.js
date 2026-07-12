@@ -16,7 +16,9 @@ const validate = (schema) => (req, res, next) => {
     } catch (error) {
         // If ZodError
         if (error.name === 'ZodError') {
-            const formattedErrors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+            const formattedErrors = Array.isArray(error.errors) 
+                ? error.errors.map(err => `${err.path ? err.path.join('.') : 'unknown'}: ${err.message}`).join(', ')
+                : error.message;
             return next(new ApiError(400, `Validation Error: ${formattedErrors}`));
         }
         next(error);

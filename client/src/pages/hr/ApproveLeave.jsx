@@ -3,8 +3,11 @@ import { Check, X, Calendar, Clock, FileText, ChevronLeft, ChevronRight } from '
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const ApproveLeave = () => {
+  const confirm = useConfirm();
+
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Pending');
@@ -29,7 +32,7 @@ const ApproveLeave = () => {
 
   const handleUpdateStatus = async (id, status, note = '') => {
     const action = status === 'Approved' ? 'approve' : 'reject';
-    if (!window.confirm(`Are you sure you want to ${action} this leave request?`)) return;
+    if (!await confirm(`Are you sure you want to ${action} this leave request?`)) return;
 
     try {
       await api.patch(`/hr/leave-requests/${id}/status`, { status, note });

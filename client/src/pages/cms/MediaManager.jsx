@@ -3,9 +3,12 @@ import { Plus, Edit2, Trash2, Search, FileImage, FileVideo, FileText, File } fro
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const MediaManager = () => {
+  const confirm = useConfirm();
+
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -85,7 +88,7 @@ const MediaManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this media file?')) return;
+    if (!await confirm('Are you sure you want to delete this media file?')) return;
 
     try {
       await api.delete(`/cms/media/${id}`);

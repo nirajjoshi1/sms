@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { printReceipt } from '../../lib/printReceipt';
 
 const SearchFees = () => {
   const [students, setStudents] = useState([]);
@@ -132,7 +133,7 @@ const SearchFees = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">From Date</label>
-            <DatePicker
+            <input type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -141,7 +142,7 @@ const SearchFees = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">To Date</label>
-            <DatePicker
+            <input type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -214,8 +215,18 @@ const SearchFees = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
+                          onClick={() => printReceipt({
+                            studentName: `${payment.Student?.firstName || ''} ${payment.Student?.lastName || ''}`.trim(),
+                            admissionNo: payment.Student?.admissionNo,
+                            className: payment.Student?.Class?.name,
+                            receiptNo: payment.receiptNo,
+                            date: payment.paymentDate,
+                            amount: payment.amount,
+                            paymentMethod: payment.paymentMethod,
+                            feeType: payment.feeType
+                          })}
                           className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-                          title="Download Receipt"
+                          title="Download/Print Receipt"
                         >
                           <Download className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>

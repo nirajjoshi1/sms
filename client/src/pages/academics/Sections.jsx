@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, LayoutGrid, List as ListIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const Sections = () => {
+  const confirm = useConfirm();
+
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +68,7 @@ const Sections = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this section?')) return;
+    if (!await confirm('Are you sure you want to delete this section?')) return;
     try {
       await api.delete(`/academics/sections/${id}`);
       toast.success('Section deleted');

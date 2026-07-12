@@ -5,9 +5,12 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const FeesDiscount = () => {
+  const confirmDialog = useConfirm();
+
   const [discounts, setDiscounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -117,7 +120,7 @@ const FeesDiscount = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this discount?')) return;
+    if (!await confirmDialog('Are you sure you want to delete this discount?')) return;
 
     try {
       await api.delete(`/fees/discounts/${id}`);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const feesController = require('../controllers/fees.controller');
-const { requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { requirePermission, requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
 const { PERMISSIONS } = require('../config/permissions');
 const { validate } = require('../middleware/validate.middleware');
 const feesValidation = require('../validations/fees.validation');

@@ -4,8 +4,11 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const Designation = () => {
+  const confirm = useConfirm();
+
   const [designations, setDesignations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -63,7 +66,7 @@ const Designation = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this designation?')) return;
+    if (!await confirm('Delete this designation?')) return;
     try {
       await api.delete(`/hr/designations/${id}`);
       toast.success('Deleted');

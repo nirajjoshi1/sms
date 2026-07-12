@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Trash2, Users, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const AssignClassTeacher = () => {
+  const confirm = useConfirm();
+
   const [classTeachers, setClassTeachers] = useState([]);
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
@@ -107,7 +110,7 @@ const AssignClassTeacher = () => {
   };
 
   const handleRemove = async (id) => {
-    if (!window.confirm('Are you sure you want to remove this class teacher assignment?')) return;
+    if (!await confirm('Are you sure you want to remove this class teacher assignment?')) return;
     try {
       await api.delete(`/academics/class-teachers/${id}`);
       toast.success('Class teacher removed');

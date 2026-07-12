@@ -11,6 +11,7 @@ const FeesMaster = () => {
   const [masters, setMasters] = useState([]);
   const [groups, setGroups] = useState([]);
   const [types, setTypes] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,20 +27,23 @@ const FeesMaster = () => {
     dueDate: '',
     fineType: 'None',
     percentage: '',
-    fixAmount: ''
+    fixAmount: '',
+    classId: ''
   });
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [mastersRes, groupsRes, typesRes] = await Promise.all([
+      const [mastersRes, groupsRes, typesRes, classesRes] = await Promise.all([
         api.get('/fees/masters'),
         api.get('/fees/groups'),
-        api.get('/fees/types')
+        api.get('/fees/types'),
+        api.get('/academics/classes')
       ]);
       setMasters(mastersRes.data.data || []);
       setGroups(groupsRes.data.data || []);
       setTypes(typesRes.data.data || []);
+      setClasses(classesRes.data.data || []);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to fetch data'));
     } finally {
@@ -61,7 +65,8 @@ const FeesMaster = () => {
         dueDate: master.dueDate ? new Date(master.dueDate).toISOString().split('T')[0] : '',
         fineType: master.fineType || 'None',
         percentage: master.percentage || '',
-        fixAmount: master.fixAmount || ''
+        fixAmount: master.fixAmount || '',
+        classId: master.classId || ''
       });
     } else {
       setEditingId(null);
@@ -72,7 +77,8 @@ const FeesMaster = () => {
         dueDate: '',
         fineType: 'None',
         percentage: '',
-        fixAmount: ''
+        fixAmount: '',
+        classId: ''
       });
     }
     setShowModal(true);
@@ -99,10 +105,14 @@ const FeesMaster = () => {
     try {
       setSubmitting(true);
       const payload = {
-        ...formData,
-        amount: parseFloat(formData.amount),
-        percentage: formData.percentage ? parseFloat(formData.percentage) : null,
-        fixAmount: formData.fixAmount ? parseFloat(formData.fixAmount) : null
+        feeGroupId: formData.feeGroupId,
+        feeTypeId: formData.feeTypeId,
+        amount: Number(formData.amount),
+        dueDate: formData.dueDate ? formData.dueDate : null,
+        fineType: formData.fineType,
+        percentage: formData.fineType === 'Percentage' ? Number(formData.percentage) : null,
+        fixAmount: (formData.fineType === 'FixAmount' || formData.fineType === 'Fix') ? Number(formData.fixAmount) : null,
+        classId: formData.classId || null
       };
 
       if (editingId) {
@@ -201,6 +211,7 @@ const FeesMaster = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fee Group</th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fee Type</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Class</th>
                     <th className="px-4 py-3 text-right text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Amount</th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Due Date</th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fine Type</th>
@@ -218,6 +229,11 @@ const FeesMaster = () => {
                           <p className="text-xs font-bold text-foreground">{master.FeeType?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{master.FeeType?.code}</p>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {master.Class?.name || 'All Classes'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-xs font-bold text-green-600 dark:text-green-400">
@@ -310,6 +326,20 @@ const FeesMaster = () => {
                   <option value="">Select Fee Group</option>
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Class (Optional)</label>
+                <select
+                  value={formData.classId || ''}
+                  onChange={(e) => setFormData({...formData, classId: e.target.value})}
+                  className="w-full h-9 bg-muted/30 border border-border rounded-lg px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+                >
+                  <option value="">All Classes (Global Fee)</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>

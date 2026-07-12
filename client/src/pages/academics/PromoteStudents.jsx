@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Search, Check, Users, AlertCircle } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const PromoteStudents = () => {
+  const confirm = useConfirm();
+
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [students, setStudents] = useState([]);
@@ -90,11 +93,36 @@ const PromoteStudents = () => {
       return toast.error('Please select destination class and section');
     }
 
+    if (filters.fromClassId === filters.toClassId && filters.fromSectionId === filters.toSectionId) {
+      return toast.error('Cannot promote to the exact same class and section');
+    }
+
     if (selectedStudents.length === 0) {
       return toast.error('Please select at least one student to promote');
     }
 
-    if (!window.confirm(`Are you sure you want to promote ${selectedStudents.length} student(s)?`)) {
+    // Attempt to prevent demotions based on class name heuristics
+    const getClassLevel = (className) => {
+      const name = className.toLowerCase();
+      if (name.includes('nursery') || name.includes('play')) return 0;
+      if (name.includes('lkg') || name.includes('lower')) return 1;
+      if (name.includes('ukg') || name.includes('upper')) return 2;
+      const match = name.match(/(grade|class|std)\s*(\d+)/);
+      if (match) return parseInt(match[2], 10) + 2;
+      return -1;
+    };
+
+    const fromClass = classes.find(c => c.id === filters.fromClassId);
+    const toClass = classes.find(c => c.id === filters.toClassId);
+    if (fromClass && toClass) {
+      const fromLevel = getClassLevel(fromClass.name);
+      const toLevel = getClassLevel(toClass.name);
+      if (fromLevel !== -1 && toLevel !== -1 && toLevel < fromLevel) {
+        return toast.error('Demoting students to a lower grade level is restricted');
+      }
+    }
+
+    if (!await confirm(`Are you sure you want to transfer/promote ${selectedStudents.length} student(s)?`)) {
       return;
     }
 
@@ -229,7 +257,7 @@ const PromoteStudents = () => {
 
             {selectedStudents.length > 0 && filters.toClassId && filters.toSectionId && (
               <div className="bg-accent/10 border border-accent/30 rounded-lg p-2">
-                <p className="text-[9px] text-muted-foreground mb-1">Will Be Promoted</p>
+                <p className="text-[9px] text-muted-foreground mb-1">Will Be Transferred/Promoted</p>
                 <p className="text-2xl font-black text-foreground">{selectedStudents.length}</p>
               </div>
             )}
@@ -245,7 +273,7 @@ const PromoteStudents = () => {
             <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Promotion Preview</p>
           </div>
           <p className="text-[11px] text-foreground mt-2">
-            <span className="font-bold">{selectedStudents.length}</span> student(s) will be promoted from{' '}
+            <span className="font-bold">{selectedStudents.length}</span> student(s) will be transferred/promoted from{' '}
             <span className="font-bold">{fromClass.name} - {fromSection.name}</span> to{' '}
             <span className="font-bold">{toClass.name} - {toSection.name}</span>
           </p>

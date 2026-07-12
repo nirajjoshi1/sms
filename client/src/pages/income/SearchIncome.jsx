@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, TrendingUp } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, TrendingUp, Edit2 } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const SearchIncome = () => {
+  const confirm = useConfirm();
+
   const navigate = useNavigate();
   const [incomes, setIncomes] = useState([]);
   const [incomeHeads, setIncomeHeads] = useState([]);
@@ -45,7 +48,7 @@ const SearchIncome = () => {
   }, [searchQuery, incomeHeadFilter, dateFrom, dateTo]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this income record?')) return;
+    if (!await confirm('Are you sure you want to delete this income record?')) return;
 
     try {
       await api.delete(`/income/${id}`);
@@ -176,7 +179,7 @@ const SearchIncome = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">From Date</label>
-            <DatePicker
+            <input type="date"
               value={dateFrom}
               onChange={(e) => {
                 setDateFrom(e.target.value);
@@ -188,7 +191,7 @@ const SearchIncome = () => {
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">To Date</label>
-            <DatePicker
+            <input type="date"
               value={dateTo}
               onChange={(e) => {
                 setDateTo(e.target.value);

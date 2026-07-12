@@ -73,8 +73,15 @@ const AddExpense = () => {
       } else {
         await api.post('/expenses', payload);
         toast.success('Expense created successfully');
+        setFormData({
+          name: '',
+          expenseHeadId: '',
+          invoiceNumber: '',
+          date: new Date().toISOString().split('T')[0],
+          amount: '',
+          description: ''
+        });
       }
-      navigate('/expenses/search');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to save expense'));
     } finally {

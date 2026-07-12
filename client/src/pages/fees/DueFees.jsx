@@ -59,10 +59,10 @@ const DueFees = () => {
     if (!filteredDueFees.length) return toast.info('No data to export');
     const headers = ['Student Name', 'Admission No', 'Class', 'Section', 'Due Amount'];
     const rows = filteredDueFees.map(d => [
-      `${d.Student?.firstName || ''} ${d.Student?.lastName || ''}`.trim(),
-      d.Student?.admissionNo || '',
-      d.Student?.Class?.name || '',
-      d.Student?.Section?.name || '',
+      `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+      d.admissionNo || '',
+      d.className || '',
+      d.sectionName || '',
       d.dueAmount || 0
     ]);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
@@ -77,11 +77,11 @@ const DueFees = () => {
   };
 
   const filteredDueFees = dueFees.filter(d => {
-    const studentName = `${d.Student?.firstName} ${d.Student?.lastName}`.toLowerCase();
-    const admissionNo = d.Student?.admissionNo?.toLowerCase() || '';
+    const studentName = `${d.firstName} ${d.lastName}`.toLowerCase();
+    const admissionNo = d.admissionNo?.toLowerCase() || '';
     const matchesSearch = studentName.includes(searchQuery.toLowerCase()) ||
                          admissionNo.includes(searchQuery.toLowerCase());
-    const matchesClass = !classFilter || d.Student?.classId === classFilter;
+    const matchesClass = !classFilter || d.classId === classFilter;
     return matchesSearch && matchesClass;
   });
 
@@ -194,25 +194,25 @@ const DueFees = () => {
                       <td className="px-4 py-3">
                         <div>
                           <p className="text-xs font-bold text-foreground">
-                            {due.Student?.firstName} {due.Student?.lastName}
+                            {due.firstName} {due.lastName}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{due.Student?.admissionNo}</p>
+                          <p className="text-[10px] text-muted-foreground">{due.admissionNo}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-foreground">{due.Student?.Class?.name}</span>
+                        <span className="text-xs text-foreground">{due.className} - {due.sectionName}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-foreground">{due.feeType}</span>
+                        <span className="text-xs text-foreground">Multiple/All</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-xs text-foreground">
-                          ₹{due.totalAmount?.toLocaleString()}
+                          ₹{due.totalExpected?.toLocaleString()}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-xs text-green-600 dark:text-green-400">
-                          ₹{due.paidAmount?.toLocaleString()}
+                          ₹{due.totalPaid?.toLocaleString()}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -222,7 +222,7 @@ const DueFees = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-foreground">
-                          {new Date(due.dueDate).toLocaleDateString()}
+                          -
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">

@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const LeaveType = () => {
+  const confirm = useConfirm();
+
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +73,7 @@ const LeaveType = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this leave type?')) return;
+    if (!await confirm('Are you sure you want to delete this leave type?')) return;
 
     try {
       await api.delete(`/hr/leave-types/${id}`);

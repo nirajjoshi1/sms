@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settings.controller');
-const { requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { requirePermission, requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
 const { PERMISSIONS } = require('../config/permissions');
 
 // All routes require school context (except Super Admin)

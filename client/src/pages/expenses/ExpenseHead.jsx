@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const ExpenseHead = () => {
+  const confirm = useConfirm();
+
   const [expenseHeads, setExpenseHeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +73,7 @@ const ExpenseHead = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this expense head?')) return;
+    if (!await confirm('Are you sure you want to delete this expense head?')) return;
 
     try {
       await api.delete(`/expenses/heads/${id}`);

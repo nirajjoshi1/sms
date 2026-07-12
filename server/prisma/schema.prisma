@@ -65,6 +65,7 @@ model Class {
   Homework          Homework[]
   ExamMark          ExamMark[]
   StudentHistory    StudentHistory[]
+  FeeMaster         FeeMaster[]
   schoolId          String?
   School            School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -195,6 +196,8 @@ model FeeMaster {
   updatedAt  DateTime  @updatedAt
   FeeGroup   FeeGroup  @relation(fields: [feeGroupId], references: [id])
   FeeType    FeeType   @relation(fields: [feeTypeId], references: [id])
+  classId    String?
+  Class      Class?    @relation(fields: [classId], references: [id])
   schoolId   String?
   School     School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }

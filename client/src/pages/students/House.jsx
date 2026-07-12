@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Home, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const House = () => {
+  const confirm = useConfirm();
+
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +74,7 @@ const House = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this house? This may affect student records.')) return;
+    if (!await confirm('Are you sure you want to delete this house? This may affect student records.')) return;
     try {
       await api.delete(`/student-setup/houses/${id}`);
       toast.success('House deleted');

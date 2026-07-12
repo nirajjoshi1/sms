@@ -3,9 +3,12 @@ import { Plus, Edit2, Trash2, FileText, Search, Filter } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const Pages = () => {
+  const confirm = useConfirm();
+
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -107,7 +110,7 @@ const Pages = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this page?')) return;
+    if (!await confirm('Are you sure you want to delete this page?')) return;
 
     try {
       await api.delete(`/cms/pages/${id}`);

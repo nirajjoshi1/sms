@@ -11,10 +11,10 @@ const createTransaction = (headIdField) => ({
     body: z.object({
         [headIdField]: z.string().uuid(`Invalid Head ID`),
         name: z.string().min(1, "Name/Title is required"),
-        invoiceNo: z.string().optional().nullable(),
+        invoiceNumber: z.string().optional().nullable(),
         date: z.string().min(1, "Date is required"),
         amount: z.number().positive("Amount must be a positive number"),
-        note: z.string().optional().nullable()
+        description: z.string().optional().nullable()
     }).strict()
 });
 

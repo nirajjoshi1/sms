@@ -15,8 +15,11 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import RequirePermission from '../../components/shared/RequirePermission';
 import { PERMISSIONS } from '../../constants/permissions';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const StudentList = () => {
+  const confirm = useConfirm();
+
   const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +96,7 @@ const StudentList = () => {
   }, [searchQuery, filters, pagination.page, pagination.limit]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this student?')) return;
+    if (!await confirm('Are you sure you want to delete this student?')) return;
 
     try {
       await api.delete(`/students/${id}`);

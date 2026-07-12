@@ -11,8 +11,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const DisabledStudents = () => {
+  const confirm = useConfirm();
+
   const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +56,7 @@ const DisabledStudents = () => {
   }, [searchQuery, pagination.page]);
 
   const handleEnable = async (id) => {
-    if (!window.confirm('Are you sure you want to enable this student?')) return;
+    if (!await confirm('Are you sure you want to enable this student?')) return;
 
     try {
       await api.patch(`/students/${id}/status`, {

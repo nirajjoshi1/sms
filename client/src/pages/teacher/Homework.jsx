@@ -3,8 +3,11 @@ import { BookOpen, Calendar, Plus, Trash, Users, Save, CheckCircle, FileText, Ex
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useConfirm } from '../../context/ConfirmContext';
 
 const Homework = () => {
+  const confirm = useConfirm();
+
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
@@ -173,7 +176,7 @@ const Homework = () => {
   };
 
   const handleDeleteHomework = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this homework assignment?')) return;
+    if (!await confirm('Are you sure you want to delete this homework assignment?')) return;
 
     try {
       await api.delete(`/teacher/homework/${id}`);

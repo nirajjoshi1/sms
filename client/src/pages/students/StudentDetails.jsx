@@ -25,8 +25,11 @@ import { useStudents } from '../../hooks/useStudents';
 import { useAcademics } from '../../hooks/useAcademics';
 import { Link } from 'react-router-dom';
 import CustomSelect from '../../components/ui/CustomSelect';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const StudentDetails = () => {
+  const confirm = useConfirm();
+
   const { students, loading, fetchStudents } = useStudents();
   const { classes, sections } = useAcademics();
   
@@ -48,7 +51,7 @@ const StudentDetails = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this student?')) return;
+    if (!await confirm('Are you sure you want to delete this student?')) return;
     try {
       await api.delete(`/students/${id}`);
       toast.success('Student deleted successfully');

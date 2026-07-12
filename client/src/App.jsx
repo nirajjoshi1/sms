@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CacheProvider } from "./context/CacheContext";
+import { ConfirmProvider } from "./context/ConfirmContext";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { Toaster } from 'sonner';
@@ -16,7 +17,8 @@ function App() {
           <FormKeyboardNavigation />
           <CacheProvider>
             <AuthProvider>
-              <AppRoutes />
+              <ConfirmProvider>
+                <AppRoutes />
               <Toaster
               position="top-right"
               closeButton
@@ -54,6 +56,7 @@ function App() {
                 },
               }}
             />
+              </ConfirmProvider>
             </AuthProvider>
           </CacheProvider>
         </ThemeProvider>

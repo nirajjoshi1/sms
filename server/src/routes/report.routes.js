@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/report.controller');
-const { verifyJWT, requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { verifyJWT, requirePermission, requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
 const { PERMISSIONS } = require('../config/permissions');
 
 // All reports routes require authentication and school context

@@ -77,20 +77,8 @@ exports.requireSchoolContext = (req, res, next) => {
         throw new ApiError(403, "Access denied - No school context found for user");
     }
     
-    // Auto-inject schoolId into body/query if not present, to ensure controllers use the correct scope
-    if (req.user.schoolId) {
-        if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-            if (!req.body || typeof req.body !== 'object') {
-                return next();
-            }
-
-            // Prevent users from injecting a different schoolId
-            if (req.body.schoolId && req.body.schoolId !== req.user.schoolId) {
-                throw new ApiError(403, "Access denied - Cannot operate on another tenant's resources");
-            }
-            req.body.schoolId = req.user.schoolId;
-        }
-    }
+    // Note: schoolId is automatically injected into Prisma queries by the Prisma extension
+    // We intentionally DO NOT inject it into req.body to avoid breaking Zod .strict() validation
     
     next();
 };

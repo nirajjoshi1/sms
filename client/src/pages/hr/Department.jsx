@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const Department = () => {
+  const confirm = useConfirm();
+
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +73,7 @@ const Department = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this department?')) return;
+    if (!await confirm('Are you sure you want to delete this department?')) return;
 
     try {
       await api.delete(`/hr/departments/${id}`);

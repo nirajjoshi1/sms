@@ -22,8 +22,9 @@ const createFeeMaster = {
         dueDate: z.string().min(1, "Due date is required"),
         amount: z.number().positive("Amount must be a positive number"),
         fineType: z.enum(['None', 'Percentage', 'FixAmount']).default('None'),
-        finePercentage: z.number().nonnegative().optional().nullable(),
-        fineAmount: z.number().nonnegative().optional().nullable()
+        percentage: z.number().nonnegative().optional().nullable(),
+        fixAmount: z.number().nonnegative().optional().nullable(),
+        classId: z.string().uuid("Invalid Class ID").optional().nullable()
     }).strict()
 };
 
@@ -31,9 +32,11 @@ const createFeeDiscount = {
     body: z.object({
         name: z.string().min(1, "Discount name is required"),
         code: z.string().min(1, "Discount code is required"),
-        type: z.enum(['Percentage', 'FixAmount']),
+        discountType: z.enum(['Percentage', 'FixAmount', 'Percentage', 'FixedAmount']).catch('Percentage'), // Just in case, keeping valid values
         percentage: z.number().nonnegative().optional().nullable(),
         amount: z.number().nonnegative().optional().nullable(),
+        usageLimit: z.number().int().nonnegative().optional().nullable(),
+        expiryDate: z.string().optional().nullable(),
         description: z.string().optional().nullable()
     }).strict()
 };
@@ -73,11 +76,10 @@ const updateOfflineBankPaymentStatus = {
 
 const createFeeReminder = {
     body: z.object({
-        title: z.string().min(1, "Title is required"),
-        message: z.string().min(1, "Message is required"),
-        dueDate: z.string().min(1, "Due date is required"),
-        feeGroupId: z.string().uuid().optional().nullable(),
-        classId: z.string().uuid().optional().nullable()
+        reminderType: z.string().min(1, "Reminder type is required"),
+        days: z.coerce.number().int().min(0, "Days must be a non-negative integer"),
+        isActive: z.boolean().optional()
+
     }).strict()
 };
 
@@ -87,9 +89,10 @@ const updateFeeReminder = {
 
 const carryForwardFees = {
     body: z.object({
-        fromSessionId: z.string().uuid().optional(),
-        toSessionId: z.string().uuid().optional(),
-        studentIds: z.array(z.string().uuid()).optional()
+        fromSession: z.string().uuid().optional().nullable(),
+        toSession: z.string().uuid().optional().nullable(),
+        classId: z.string().uuid().optional().nullable(),
+        studentIds: z.array(z.string().uuid()).optional().nullable()
     }).strict()
 };
 

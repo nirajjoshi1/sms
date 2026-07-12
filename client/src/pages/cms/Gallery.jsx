@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import ImageUpload from '../../components/common/ImageUpload';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const Gallery = () => {
+  const confirm = useConfirm();
+
   const [gallery, setGallery] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -86,7 +89,7 @@ const Gallery = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this gallery image?')) return;
+    if (!await confirm('Are you sure you want to delete this gallery image?')) return;
 
     try {
       await api.delete(`/cms/gallery/${id}`);
