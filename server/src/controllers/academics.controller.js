@@ -30,7 +30,8 @@ exports.createClass = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Class with this name already exists in this school");
     }
 
-    const connectSections = sectionIds ? sectionIds.map(id => ({ id })) : [];
+    if (sectionIds !== undefined && !Array.isArray(sectionIds)) throw new ApiError(400, "sectionIds must be an array");
+    const connectSections = (sectionIds || []).map(id => ({ id }));
     const newClass = await prisma.class.create({
         data: { schoolId: req.user.schoolId, name, schoolId: req.user.schoolId, Section: { connect: connectSections } },
         include: { Section: true }
@@ -197,7 +198,8 @@ exports.getSubjectGroups = asyncHandler(async (req, res) => {
 
 exports.createSubjectGroup = asyncHandler(async (req, res) => {
     const { name, description, classId, sectionId, subjectIds } = req.body;
-    const connectSubjects = subjectIds ? subjectIds.map(id => ({ id })) : [];
+    if (!Array.isArray(subjectIds) || subjectIds.length === 0) throw new ApiError(400, "At least one subject must be selected");
+    const connectSubjects = subjectIds.map(id => ({ id }));
 
     const group = await prisma.subjectGroup.create({
         data: { schoolId: req.user.schoolId,
@@ -252,6 +254,10 @@ exports.getClassTeachers = asyncHandler(async (req, res) => {
 
 exports.assignClassTeacher = asyncHandler(async (req, res) => {
     const { classId, sectionId, staffIds } = req.body;
+
+    if (!classId || !sectionId || !Array.isArray(staffIds) || staffIds.length === 0) {
+        throw new ApiError(400, "classId, sectionId, and at least one staffId are required");
+    }
 
     // Check if any of the staff members are already assigned as class teachers elsewhere
     const existingAssignments = await prisma.classTeacher.findMany({
