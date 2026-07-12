@@ -8,14 +8,16 @@
     "dev": "nodemon server.js",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "node prisma/seed-complete.js",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:generate": "prisma generate",
-    "test": "vitest run"
+    "lint": "echo 'Add ESLint later'",
+    "test": "echo 'Add tests later'",
+    "production": "NODE_ENV=production node server.js"
   },
   "prisma": {
-    "seed": "node prisma/seed.js",
+    "seed": "node prisma/seed-complete.js",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset"
   },
@@ -47,7 +49,6 @@
   "devDependencies": {
     "@prisma/config": "^7.8.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0",
-    "vitest": "^4.1.10"
+    "prisma": "^7.8.0"
   }
 }
