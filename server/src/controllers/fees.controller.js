@@ -52,17 +52,60 @@ exports.createOfflineBankPayment = asyncHandler(async (req, res) => {
 
 exports.updateOfflineBankPaymentStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { status, statusDate } = req.body;
+    const { status, statusDate, feeGroupId, feeTypeId, remarks } = req.body;
 
-    const payment = await prisma.offlineBankPayment.update({
-        where: { id },
-        data: {
-            status,
-            statusDate: statusDate ? new Date(statusDate) : new Date()
+    const existingPayment = await prisma.offlineBankPayment.findUnique({ where: { id } });
+    if (!existingPayment) {
+        throw new ApiError(404, "Offline payment not found");
+    }
+
+    // Idempotency check
+    if (existingPayment.status === status) {
+        return res.status(200).json(new ApiResponse(200, existingPayment, "Payment status is already " + status));
+    }
+    
+    if (existingPayment.status === 'Approved') {
+        throw new ApiError(400, "Cannot change status of an already approved payment");
+    }
+
+    const updatedPayment = await prisma.$transaction(async (tx) => {
+        const payment = await tx.offlineBankPayment.update({
+            where: { id },
+            data: {
+                status,
+                statusDate: statusDate ? new Date(statusDate) : new Date()
+            }
+        });
+
+        if (status === 'Approved') {
+            if (!feeGroupId || !feeTypeId) {
+                throw new ApiError(400, "feeGroupId and feeTypeId are required to approve and generate a receipt");
+            }
+            
+            // Create the official fee receipt
+            const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+            
+            await tx.feePayment.create({
+                data: {
+                    receiptNumber,
+                    paymentDate: payment.paymentDate,
+                    amount: payment.amount,
+                    discountAmount: 0,
+                    fineAmount: 0,
+                    netAmount: payment.amount,
+                    paymentMethod: 'Bank Transfer',
+                    remarks: remarks || `Approved offline payment ${payment.paymentId}`,
+                    studentId: payment.studentId,
+                    feeGroupId,
+                    feeTypeId,
+                    schoolId: req.user.schoolId
+                }
+            });
         }
+        return payment;
     });
 
-    res.status(200).json(new ApiResponse(200, payment, "Payment status updated successfully"));
+    res.status(200).json(new ApiResponse(200, updatedPayment, "Payment status updated successfully"));
 });
 
 // =====================================
@@ -323,38 +366,57 @@ exports.collectFee = asyncHandler(async (req, res) => {
     // Generate unique receipt number
     const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-    const netAmount = parseFloat(amount) + parseFloat(fineAmount || 0) - parseFloat(discountAmount || 0);
+    // Fix floating point math with rounding to 2 decimal places
+    const rawAmount = parseFloat(amount);
+    const rawFine = parseFloat(fineAmount || 0);
+    const rawDiscount = parseFloat(discountAmount || 0);
+    const netAmount = Math.round((rawAmount + rawFine - rawDiscount) * 100) / 100;
 
-    const payment = await prisma.feePayment.create({
-        data: {
-            receiptNumber,
-            paymentDate: new Date(),
-            amount: parseFloat(amount),
-            discountAmount: parseFloat(discountAmount || 0),
-            fineAmount: parseFloat(fineAmount || 0),
-            netAmount,
-            paymentMethod,
-            remarks,
-            studentId,
-            feeGroupId,
-            feeTypeId
-        },
-        include: {
-            Student: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    admissionNo: true,
-                    Class: { select: { name: true } },
-                    Section: { select: { name: true } }
-                }
+    const payment = await prisma.$transaction(async (tx) => {
+        const newPayment = await tx.feePayment.create({
+            data: {
+                receiptNumber,
+                paymentDate: new Date(),
+                amount: rawAmount,
+                discountAmount: rawDiscount,
+                fineAmount: rawFine,
+                netAmount,
+                paymentMethod,
+                remarks,
+                studentId,
+                feeGroupId,
+                feeTypeId
             },
-            FeeGroup: { select: { name: true } },
-            FeeType: { select: { name: true } }
-        }
+            include: {
+                Student: {
+                    select: {
+                        firstName: true, lastName: true, admissionNo: true,
+                        Class: { select: { name: true } }, Section: { select: { name: true } }
+                    }
+                },
+                FeeGroup: { select: { name: true } },
+                FeeType: { select: { name: true } }
+            }
+        });
+        
+        // Inline Audit log inside transaction to ensure atomic write
+        await tx.auditLog.create({
+            data: {
+                userId: req.user.id,
+                userEmail: req.user.email,
+                action: 'COLLECT_FEE',
+                resource: 'FeePayment',
+                resourceId: newPayment.id,
+                details: JSON.stringify({ receiptNumber, amount: newPayment.amount, netAmount: newPayment.netAmount, studentId }),
+                schoolId: req.user.schoolId,
+                ipAddress: req.ip || '127.0.0.1'
+            }
+        });
+        
+        return newPayment;
     });
 
-    // Trigger notification
+    // Trigger notification (outside transaction so it doesn't block)
     try {
         const { createNotification } = require('../utils/notification');
         await createNotification({
@@ -365,16 +427,6 @@ exports.collectFee = asyncHandler(async (req, res) => {
     } catch (err) {
         console.error("Failed to trigger fee payment notification:", err);
     }
-
-    await logAudit({
-        userId: req.user.id,
-        userEmail: req.user.email,
-        action: 'COLLECT_FEE',
-        resource: 'FeePayment',
-        resourceId: payment.id,
-        details: { receiptNumber, amount: payment.amount, netAmount: payment.netAmount, studentId },
-        schoolId: req.user.schoolId
-    });
 
     res.status(201).json(new ApiResponse(201, payment, "Fee collected successfully"));
 });
