@@ -16,7 +16,22 @@ const validate = (schema) => (req, res, next) => {
     } catch (error) {
         // If ZodError
         if (error.name === 'ZodError') {
-            const formattedErrors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+            // Zod v4 exposes validation failures on `issues`; older versions
+            // used `errors`. Never let error formatting hide the real form
+            // validation message behind an undefined `.map()` crash.
+            const issues = Array.isArray(error.issues)
+                ? error.issues
+                : Array.isArray(error.errors)
+                    ? error.errors
+                    : [];
+            const formattedErrors = issues.length
+                ? issues.map(issue => {
+                    const path = Array.isArray(issue.path) && issue.path.length
+                        ? `${issue.path.join('.')}: `
+                        : '';
+                    return `${path}${issue.message || 'Invalid value'}`;
+                }).join(', ')
+                : 'Invalid request data';
             return next(new ApiError(400, `Validation Error: ${formattedErrors}`));
         }
         next(error);
