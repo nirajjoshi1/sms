@@ -1,6 +1,8 @@
 # 🏫 School Management System
 
-A comprehensive, production-ready, full-stack school management system built with **React 19**, **Node.js**, **Express**, **Prisma ORM**, and **PostgreSQL**. Manage every aspect of a school — students, staff, academics, fees, HR, certificates, CMS, and analytics — in one unified multi-tenant platform.
+A comprehensive, production-ready, full-stack school management system built with **React 19**, **Node.js**, **Express**, **Prisma ORM**, and **PostgreSQL**. Manage every aspect of a school — students, staff, academics, fees, HR, certificates, CMS, and analytics — in one unified multi-tenant platform. 
+
+Designed as a hardened, enterprise-grade SaaS application, it features robust multi-tenancy, strict IDOR protection, and granular Role-Based Access Control (RBAC).
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)
@@ -76,6 +78,18 @@ A comprehensive, production-ready, full-stack school management system built wit
 - Automated database backups
 - Online admission requests management
 - Broadcast notification composer
+
+---
+
+## 🔒 Hardened Security & Architecture
+
+This application is built for production environments with enterprise-grade security:
+
+- **Multi-Tenant Architecture:** Complete data isolation between schools. All queries automatically scope to the authenticated user's `schoolId`.
+- **Strict IDOR Protection:** Consistent ownership verification prevents users from accessing or modifying records belonging to other tenants.
+- **Granular RBAC:** Permissions are decoupled from roles, offering a highly customizable matrix of over 30 distinct permissions (see [PERMISSIONS.md](./PERMISSIONS.md)).
+- **Zod Validation:** All incoming data is rigorously validated and sanitized at the API boundary, preventing injection attacks and malformed data (see [SECURITY.md](./SECURITY.md)).
+- **Defense in Depth:** Implements Helmet.js (security headers), rate limiting, bcrypt password hashing, and brute-force protection.
 
 ---
 
@@ -215,236 +229,6 @@ Frontend runs at: `http://localhost:5173`
 | Teacher | `teacher@demo.com` | `Teacher@123` |
 
 > ⚠️ **Change these credentials immediately after first login in a production environment.**
-
----
-
-## 📁 Project Structure
-
-```
-school-management-system/
-├── client/                        # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/               # shadcn/ui base components
-│   │   │   ├── layout/           # MainLayout, Sidebar, Navbar
-│   │   │   └── auth/             # ProtectedRoute
-│   │   ├── pages/
-│   │   │   ├── academics/        # Classes, Sections, Subjects, Timetable, ExamMarks
-│   │   │   ├── certificates/     # Student/Staff ID Cards, Certificates
-│   │   │   ├── cms/              # Events, Gallery, News, Media
-│   │   │   ├── dashboard/        # Role-specific dashboards
-│   │   │   ├── expenses/         # Expense management
-│   │   │   ├── fees/             # Fee collection, due fees, reminders
-│   │   │   ├── hr/               # Staff HR, leave, payroll
-│   │   │   ├── income/           # Income management
-│   │   │   ├── public/           # Landing page
-│   │   │   ├── reports/          # All report pages
-│   │   │   ├── settings/         # System settings + broadcast
-│   │   │   ├── staff/            # Staff CRUD
-│   │   │   ├── students/         # Student CRUD
-│   │   │   └── teacher/          # Teacher portal
-│   │   ├── context/              # AuthContext
-│   │   ├── hooks/                # Custom React hooks
-│   │   ├── lib/                  # api.js, errorHandler.js
-│   │   └── routes/               # AppRoutes.jsx
-│   └── package.json
-│
-├── server/                        # Express backend
-│   ├── prisma/
-│   │   ├── schema.prisma         # Full database schema
-│   │   └── seed.js               # Seeder script
-│   ├── src/
-│   │   ├── config/               # Prisma client, env config
-│   │   ├── controllers/          # All route controllers (20+ files)
-│   │   ├── middleware/           # auth, errorHandler, validation, rateLimiter
-│   │   ├── routes/               # Express routers (20+ files)
-│   │   ├── services/             # email.service, fees.service, report.service
-│   │   ├── utils/                # ApiResponse, ApiError, asyncHandler
-│   │   └── validations/          # Zod validation schemas
-│   ├── app.js
-│   ├── server.js
-│   └── package.json
-│
-└── README.md
-```
-
----
-
-## 🔐 Authentication & Authorization
-
-JWT-based authentication with role-based access control (RBAC):
-
-| Role | Access |
-|---|---|
-| `SUPER_ADMIN` | All schools — manage tenants, system-wide view |
-| `ADMIN` | Full access within their school |
-| `TEACHER` | Academics, attendance, homework, marks entry |
-| `ACCOUNTANT` | Fees, income, expenses, financial reports |
-| `RECEPTIONIST` | Student admissions, basic student/staff lookup |
-
----
-
-## 🔒 Security Features
-
-- ✅ **Helmet.js** — HTTP security headers
-- ✅ **CORS** with origin whitelist
-- ✅ **Rate limiting** — 100 req/15min general; 10 req/15min on auth
-- ✅ **JWT** — access tokens with expiry and revocation
-- ✅ **bcryptjs** — password hashing (salt rounds: 12)
-- ✅ **Brute-force protection** — login attempt tracking with account lockout
-- ✅ **Zod validation** — all request bodies validated before controller
-- ✅ **Prisma ORM** — SQL injection prevention
-- ✅ **School context isolation** — users can only access their own school's data
-
----
-
-## 🗄️ Database Schema
-
-Key models in the Prisma schema:
-
-| Model | Description |
-|---|---|
-| `User` | Auth, roles (SUPER_ADMIN, ADMIN, TEACHER, ACCOUNTANT, RECEPTIONIST) |
-| `School` | Multi-tenant school records |
-| `Student` | Full student profiles with class/section |
-| `Staff` | Staff records with department/designation |
-| `Class`, `Section` | Academic structure |
-| `Subject`, `SubjectGroup` | Curriculum management |
-| `FeeGroup`, `FeeType`, `FeeMaster` | Fee structure |
-| `FeePayment` | Payment transactions + carry-forward records |
-| `FeeDiscount` | Student-level discounts |
-| `FeeReminder` | Reminder configuration |
-| `Income`, `Expense` | Financial ledger |
-| `IncomeHead`, `ExpenseHead` | Category heads |
-| `Attendance` | Student daily attendance |
-| `StaffAttendance` | Staff daily attendance |
-| `LeaveRequest`, `LeaveType` | HR leave management |
-| `Payroll` | Staff payroll records |
-| `Mark` | Exam marks by student/subject |
-| `Homework` | Teacher-assigned homework |
-| `Timetable` | Class and teacher timetables |
-| `Notification` | In-app notifications |
-| `Certificate`, `IDCard` | Generated documents |
-| `Event`, `News`, `Gallery` | CMS content |
-| `MediaFile` | Uploaded media |
-| `AuditLog` | Activity audit trail |
-
----
-
-## 📡 API Reference
-
-### Base URL
-```
-http://localhost:5000/api/v1
-```
-
-### Authentication
-```
-POST   /auth/login
-POST   /auth/logout
-GET    /auth/me
-POST   /auth/forgot-password
-POST   /auth/reset-password/:token
-```
-
-### Core Modules
-```
-/students          — GET, POST, GET/:id, PUT/:id, DELETE/:id
-/staff             — GET, POST, GET/:id, PUT/:id, DELETE/:id
-/academics/class   — GET, POST, PUT/:id, DELETE/:id
-/academics/marks   — GET (admin overview with filters + summary)
-/fees/collect      — POST (collect fee payment)
-/fees/payments     — GET (search payments)
-/fees/due          — GET (students with outstanding dues)
-/fees/reminders    — GET, POST, PUT/:id, DELETE/:id
-/fees/carry-forward — POST (carry-forward dues to new session)
-/finance/income    — GET, POST, PUT/:id, DELETE/:id
-/finance/expense   — GET, POST, PUT/:id, DELETE/:id
-/hr/leave-requests — GET, POST, PATCH/:id/status
-/notifications     — GET, DELETE
-/notifications/broadcast — POST (admin only — send to all/role)
-/reports/:type     — GET (student, attendance, finance, hr, alumni, homework, userlog, audit)
-/cms/events        — GET, POST, PUT/:id, DELETE/:id
-/settings/general  — GET, PUT
-/schools           — GET, POST (SUPER_ADMIN only)
-```
-
-All responses follow:
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Operation successful",
-  "data": {}
-}
-```
-
----
-
-## 📦 Production Build
-
-```bash
-# Root — builds frontend into client/dist/
-npm run build
-
-# Start backend
-cd server && npm start
-```
-
----
-
-## 🌍 Environment Variables Reference
-
-### Backend (`server/.env`)
-
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | ✅ | Server port (default: 5000) |
-| `NODE_ENV` | ✅ | `development` or `production` |
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `JWT_SECRET` | ✅ | Min 32-char random secret |
-| `JWT_EXPIRY` | ✅ | Token TTL e.g. `7d` |
-| `CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | ✅ | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | ✅ | Cloudinary API secret |
-| `EMAIL_HOST` | ⚠️ | SMTP host (for email features) |
-| `EMAIL_PORT` | ⚠️ | SMTP port (587 for TLS) |
-| `EMAIL_USER` | ⚠️ | SMTP username/email |
-| `EMAIL_PASS` | ⚠️ | SMTP password or app password |
-| `EMAIL_FROM_NAME` | ⚠️ | Sender display name |
-| `CLIENT_URL` | ✅ | Frontend URL for CORS |
-
-### Frontend (`client/.env`)
-
-| Variable | Required | Description |
-|---|---|---|
-| `VITE_API_URL` | ✅ | Backend API base URL |
-| `VITE_CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud name |
-
----
-
-## 🗺️ Roadmap
-
-- [ ] Mobile app (React Native)
-- [ ] Parent portal with student progress tracking
-- [ ] Online exam and quiz module
-- [ ] Library management
-- [ ] Transport and route management
-- [ ] Hostel management
-- [ ] Biometric attendance integration
-- [ ] Bulk SMS notifications
-- [ ] Multi-language (i18n) support
-- [ ] PWA (offline support)
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ---
 

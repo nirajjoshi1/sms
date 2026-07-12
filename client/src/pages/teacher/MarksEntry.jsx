@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Award, Save, BookOpen } from 'lucide-react';
 import api from '../../lib/api';
@@ -39,7 +39,8 @@ const MarksEntry = () => {
             setSelectedSection(uniqueCombos[0].sectionId);
           }
         }
-      } catch (error) {
+      } catch (err) {
+        console.error(err);
         toast.error('Failed to load setups');
       } finally {
         setLoadingSetup(false);
@@ -119,7 +120,8 @@ const MarksEntry = () => {
         };
       });
       setMarksData(stateMap);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       toast.error('Failed to load student scores roster');
     } finally {
       setLoadingStudents(false);
