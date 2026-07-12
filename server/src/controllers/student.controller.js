@@ -104,19 +104,31 @@ exports.admitStudent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Missing required fields");
     }
 
-    // Auto-generate admission number
-    const lastStudent = await prisma.student.findFirst({
-        orderBy: { createdAt: 'desc' },
+    // Auto-generate an admission number while preserving an existing prefix
+    // and zero-padding (for example, MGS-010 -> MGS-011). parseInt cannot be
+    // used directly because prefixed admission numbers evaluate to NaN.
+    const existingStudents = await prisma.student.findMany({
         select: { admissionNo: true }
     });
 
-    let admissionNo;
-    if (lastStudent && lastStudent.admissionNo) {
-        const lastNum = parseInt(lastStudent.admissionNo);
-        admissionNo = (lastNum + 1).toString();
-    } else {
-        admissionNo = '1';
+    let highestNumber = 0;
+    let selectedPrefix = '';
+    let selectedWidth = 1;
+
+    for (const student of existingStudents) {
+        const match = student.admissionNo?.trim().match(/^(.*?)(\d+)$/);
+        if (!match) continue;
+
+        const numericPart = Number(match[2]);
+        if (Number.isSafeInteger(numericPart) && numericPart >= highestNumber) {
+            highestNumber = numericPart;
+            selectedPrefix = match[1];
+            selectedWidth = match[2].length;
+        }
     }
+
+    const nextNumber = String(highestNumber + 1).padStart(selectedWidth, '0');
+    const admissionNo = `${selectedPrefix}${nextNumber}`;
 
     // Handle file uploads from multer
     let photoUrl = null;
@@ -157,7 +169,8 @@ exports.admitStudent = asyncHandler(async (req, res) => {
             guardianName,
             guardianRelation: guardianRelation || null,
             guardianPhone,
-            guardianAddress: guardianAddress || null
+            guardianAddress: guardianAddress || null,
+            updatedAt: new Date()
         },
         include: {
             Class: true,
