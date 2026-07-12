@@ -8,12 +8,13 @@ const prisma = require('../config/prisma');
 // Income Head Controllers
 // =====================================
 exports.getIncomeHeads = asyncHandler(async (req, res) => {
-    const incomeHeads = await prisma.incomeHead.findMany({ orderBy: { name: 'asc' }});
+    const incomeHeads = await prisma.incomeHead.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, incomeHeads, "Income heads fetched successfully"));
 });
 
 exports.createIncomeHead = asyncHandler(async (req, res) => {
-    const head = await prisma.incomeHead.create({ data: { name: req.body.name, description: req.body.description }});
+    const head = await prisma.incomeHead.create({ data: { schoolId: req.user.schoolId, name: req.body.name, description: req.body.description }});
     res.status(201).json(new ApiResponse(201, head, "Income head created successfully"));
 });
 
@@ -66,7 +67,7 @@ exports.getIncomes = asyncHandler(async (req, res) => {
 
 exports.createIncome = asyncHandler(async (req, res) => {
     const income = await prisma.income.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             ...req.body,
             date: new Date(req.body.date),
             amount: parseFloat(req.body.amount)
@@ -102,12 +103,13 @@ exports.deleteIncome = asyncHandler(async (req, res) => {
 // Expense Head Controllers
 // =====================================
 exports.getExpenseHeads = asyncHandler(async (req, res) => {
-    const expenseHeads = await prisma.expenseHead.findMany({ orderBy: { name: 'asc' }});
+    const expenseHeads = await prisma.expenseHead.findMany({ where: { schoolId: req.user.schoolId },
+ orderBy: { name: 'asc' }});
     res.status(200).json(new ApiResponse(200, expenseHeads, "Expense heads fetched successfully"));
 });
 
 exports.createExpenseHead = asyncHandler(async (req, res) => {
-    const head = await prisma.expenseHead.create({ data: { name: req.body.name, description: req.body.description }});
+    const head = await prisma.expenseHead.create({ data: { schoolId: req.user.schoolId, name: req.body.name, description: req.body.description }});
     res.status(201).json(new ApiResponse(201, head, "Expense head created successfully"));
 });
 
@@ -160,7 +162,7 @@ exports.getExpenses = asyncHandler(async (req, res) => {
 
 exports.createExpense = asyncHandler(async (req, res) => {
     const expense = await prisma.expense.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             ...req.body,
             date: new Date(req.body.date),
             amount: parseFloat(req.body.amount)

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const financeController = require('../controllers/finance.controller');
-const { requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
+const { requireSchoolContext, requirePermission } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 
 router.use(requireSchoolContext);
 

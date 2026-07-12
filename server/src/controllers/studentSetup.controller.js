@@ -9,6 +9,8 @@ const prisma = require('../config/prisma');
 // =====================================
 exports.getCategories = asyncHandler(async (req, res) => {
     const categories = await prisma.category.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' },
         include: {
             _count: {
@@ -32,7 +34,7 @@ exports.createCategory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Category with this name already exists in this school");
     }
 
-    const category = await prisma.category.create({ data: { name } });
+    const category = await prisma.category.create({ data: { schoolId: req.user.schoolId, name } });
     res.status(201).json(new ApiResponse(201, category, "Category created successfully"));
 });
 
@@ -88,6 +90,8 @@ exports.deleteCategory = asyncHandler(async (req, res) => {
 // =====================================
 exports.getHouses = asyncHandler(async (req, res) => {
     const houses = await prisma.house.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' },
         include: {
             _count: {
@@ -112,7 +116,7 @@ exports.createHouse = asyncHandler(async (req, res) => {
     }
 
     const house = await prisma.house.create({
-        data: { name, description: description || null }
+        data: { schoolId: req.user.schoolId, name, description: description || null }
     });
     res.status(201).json(new ApiResponse(201, house, "House created successfully"));
 });
@@ -169,6 +173,8 @@ exports.deleteHouse = asyncHandler(async (req, res) => {
 // =====================================
 exports.getDisableReasons = asyncHandler(async (req, res) => {
     const reasons = await prisma.disableReason.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { reason: 'asc' },
         include: {
             _count: {
@@ -192,7 +198,7 @@ exports.createDisableReason = asyncHandler(async (req, res) => {
         throw new ApiError(400, "This disable reason already exists in this school");
     }
 
-    const disableReason = await prisma.disableReason.create({ data: { reason } });
+    const disableReason = await prisma.disableReason.create({ data: { schoolId: req.user.schoolId, reason } });
     res.status(201).json(new ApiResponse(201, disableReason, "Disable reason created successfully"));
 });
 

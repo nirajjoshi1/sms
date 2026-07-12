@@ -37,7 +37,7 @@ exports.createSchoolRequest = asyncHandler(async (req, res) => {
     }
 
     const schoolRequest = await prisma.schoolRequest.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             schoolName,
             schoolCode,
             contactName,
@@ -59,6 +59,8 @@ exports.createSchoolRequest = asyncHandler(async (req, res) => {
 // @access  Private (Super Admin only)
 exports.getAllSchoolRequests = asyncHandler(async (req, res) => {
     const requests = await prisma.schoolRequest.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { createdAt: 'desc' }
     });
 

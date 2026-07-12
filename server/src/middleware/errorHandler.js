@@ -1,10 +1,22 @@
 const { ApiError } = require("../utils/ApiError");
+const logger = require("../utils/logger");
 
 const errorHandler = (err, req, res, next) => {
     let error = err;
 
+    // Log the error for observability
+    logger.error(`[ErrorHandler] ${err.name || 'Error'}: ${err.message}`, err);
+
+    // Map Zod Validation Errors
+    if (err.name === 'ZodError') {
+        const errors = err.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+        }));
+        error = new ApiError(400, "Validation Error", errors, err.stack);
+    }
     // Map Prisma Client Errors
-    if (err.constructor && err.constructor.name === 'PrismaClientKnownRequestError') {
+    else if (err.constructor && err.constructor.name === 'PrismaClientKnownRequestError') {
         let statusCode = 400;
         let message = err.message;
         let errors = [];
@@ -40,7 +52,7 @@ const errorHandler = (err, req, res, next) => {
         ...(process.env.NODE_ENV === "development" && { stack: error.stack })
     };
 
-    return res.status(error.statusCode).json(response);
+    return res.status(error.statusCode || 500).json(response);
 };
 
 module.exports = { errorHandler };

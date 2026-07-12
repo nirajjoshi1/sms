@@ -13,6 +13,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import RequirePermission from '../../components/shared/RequirePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const StudentList = () => {
   const navigate = useNavigate();
@@ -138,13 +140,15 @@ const StudentList = () => {
             <Filter className="w-3.5 h-3.5" />
             Filters
           </button>
-          <Link
-            to="/students/admission"
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[11px] font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Student
-          </Link>
+          <RequirePermission permission={PERMISSIONS.STUDENTS_CREATE}>
+            <Link
+              to="/students/admission"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[11px] font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Student
+            </Link>
+          </RequirePermission>
         </div>
       </div>
 
@@ -308,20 +312,24 @@ const StudentList = () => {
                       >
                         <Eye className="w-3 h-3" />
                       </button>
-                      <button
-                        onClick={() => navigate(`/students/edit/${student.id}`)}
-                        className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(student.id)}
-                        className="p-1.5 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-md transition-all"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <RequirePermission permission={PERMISSIONS.STUDENTS_UPDATE}>
+                        <button
+                          onClick={() => navigate(`/students/edit/${student.id}`)}
+                          className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                      </RequirePermission>
+                      <RequirePermission permission={PERMISSIONS.STUDENTS_DISABLE}>
+                        <button
+                          onClick={() => handleDelete(student.id)}
+                          className="p-1.5 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-md transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </RequirePermission>
                     </div>
                   </td>
                 </tr>

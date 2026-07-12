@@ -80,9 +80,6 @@ exports.requireSchoolContext = (req, res, next) => {
     // Auto-inject schoolId into body/query if not present, to ensure controllers use the correct scope
     if (req.user.schoolId) {
         if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-            // For multipart/form-data requests (such as image uploads), multer has
-            // not populated req.body yet when this middleware runs.
-            // Only inspect/inject tenant data when a parsed request body exists.
             if (!req.body || typeof req.body !== 'object') {
                 return next();
             }
@@ -106,11 +103,24 @@ exports.requireTenantUser = (req, res, next) => {
     }
 
     if (req.user.role === 'SUPER_ADMIN') {
-        throw new ApiError(403, "Super Admin cannot access school tenant routes");
+        throw new ApiError(403, "Super Admin is a platform role and cannot access school tenant routes");
     }
 
     if (!req.user.schoolId) {
         throw new ApiError(403, "Access denied - No school context found for user");
+    }
+
+    next();
+};
+
+// Ensure the user is a platform-level user (Super Admin)
+exports.requirePlatformUser = (req, res, next) => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN') {
+        throw new ApiError(403, "Access denied - Platform level access required");
     }
 
     next();
@@ -140,11 +150,6 @@ exports.requirePermission = (permission) => {
     return (req, res, next) => {
         if (!req.user) {
             throw new ApiError(401, "Unauthorized");
-        }
-
-        // SUPER_ADMIN is platform admin; block them from school tenant operations
-        if (req.user.role === 'SUPER_ADMIN') {
-            throw new ApiError(403, "Super Admin cannot perform tenant operations");
         }
 
         const permissions = ROLE_PERMISSIONS[req.user.role] || [];

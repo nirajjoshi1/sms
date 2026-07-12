@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notification.controller');
-const { verifyJWT, authorizeRoles, requireSchoolContext } = require('../middleware/auth.middleware');
+const { verifyJWT, requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { PERMISSIONS } = require('../config/permissions');
 
 router.use(requireSchoolContext);
 

@@ -135,7 +135,7 @@ exports.createBroadcastNotification = asyncHandler(async (req, res) => {
     const notifications = await prisma.$transaction(
         users.map(user =>
             prisma.notification.create({
-                data: { title, message, type, userId: user.id, isRead: false }
+                data: { schoolId: req.user.schoolId, title, message, type, userId: user.id, isRead: false }
             })
         )
     );

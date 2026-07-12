@@ -30,7 +30,7 @@ export default function CustomModal({ isOpen, onClose, title, children, maxWidth
           <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">
             {title}
           </h3>
-          <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded transition-colors" title="Close">
+          <button type="button" onClick={onClose} aria-label="Close modal" className="p-1 hover:bg-muted rounded transition-colors" title="Close">
             <Plus className="w-4 h-4 rotate-45" />
           </button>
         </div>

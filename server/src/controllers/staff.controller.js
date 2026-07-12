@@ -117,7 +117,7 @@ exports.addStaff = asyncHandler(async (req, res) => {
     }
 
     const staff = await prisma.staff.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             staffId,
             firstName,
             middleName: middleName || null,

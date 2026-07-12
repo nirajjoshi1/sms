@@ -8,6 +8,8 @@ const prisma = require('../config/prisma');
 // =====================================
 exports.getCertificateTemplates = asyncHandler(async (req, res) => {
     const templates = await prisma.certificateTemplate.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     
@@ -23,8 +25,8 @@ exports.getCertificateTemplates = asyncHandler(async (req, res) => {
 
 exports.getCertificateTemplateById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const template = await prisma.certificateTemplate.findUnique({
-        where: { id }
+    const template = await prisma.certificateTemplate.findFirst({
+        where: { id, schoolId: req.user.schoolId }
     });
 
     if (!template) {
@@ -44,7 +46,7 @@ exports.createCertificateTemplate = asyncHandler(async (req, res) => {
     const { name, bodyText, headerText, footerText, schoolId } = req.body;
     
     const template = await prisma.certificateTemplate.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             bodyText,
             headerCenterText: headerText,
@@ -65,6 +67,9 @@ exports.createCertificateTemplate = asyncHandler(async (req, res) => {
 exports.updateCertificateTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, bodyText, headerText, footerText } = req.body;
+
+    const existing = await prisma.certificateTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
+    if (!existing) throw new ApiError(404, "Certificate template not found");
 
     const template = await prisma.certificateTemplate.update({
         where: { id },
@@ -88,6 +93,9 @@ exports.updateCertificateTemplate = asyncHandler(async (req, res) => {
 exports.deleteCertificateTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
+    const existing = await prisma.certificateTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
+    if (!existing) throw new ApiError(404, "Certificate template not found");
+
     await prisma.certificateTemplate.delete({ where: { id } });
     res.status(200).json(new ApiResponse(200, null, "Certificate template deleted successfully"));
 });
@@ -100,6 +108,7 @@ exports.getIdCardTemplates = asyncHandler(async (req, res) => {
 
     const templates = await prisma.idCardTemplate.findMany({
         where: {
+            schoolId: req.user.schoolId,
             ...(templateFor && { templateFor })
         },
         orderBy: { title: 'asc' }
@@ -109,8 +118,8 @@ exports.getIdCardTemplates = asyncHandler(async (req, res) => {
 
 exports.getIdCardTemplateById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const template = await prisma.idCardTemplate.findUnique({
-        where: { id }
+    const template = await prisma.idCardTemplate.findFirst({
+        where: { id, schoolId: req.user.schoolId }
     });
 
     if (!template) {
@@ -122,13 +131,16 @@ exports.getIdCardTemplateById = asyncHandler(async (req, res) => {
 
 exports.createIdCardTemplate = asyncHandler(async (req, res) => {
     const template = await prisma.idCardTemplate.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, template, "ID card template created successfully"));
 });
 
 exports.updateIdCardTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
+
+    const existing = await prisma.idCardTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
+    if (!existing) throw new ApiError(404, "ID card template not found");
 
     const template = await prisma.idCardTemplate.update({
         where: { id },
@@ -140,6 +152,9 @@ exports.updateIdCardTemplate = asyncHandler(async (req, res) => {
 
 exports.deleteIdCardTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
+
+    const existing = await prisma.idCardTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
+    if (!existing) throw new ApiError(404, "ID card template not found");
 
     await prisma.idCardTemplate.delete({ where: { id } });
     res.status(200).json(new ApiResponse(200, null, "ID card template deleted successfully"));
@@ -156,9 +171,9 @@ exports.generateCertificate = asyncHandler(async (req, res) => {
     }
 
     const [template, student] = await Promise.all([
-        prisma.certificateTemplate.findUnique({ where: { id: templateId } }),
-        prisma.student.findUnique({
-            where: { id: studentId },
+        prisma.certificateTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
+        prisma.student.findFirst({
+            where: { id: studentId, schoolId: req.user.schoolId },
             include: {
                 Class: { select: { name: true } },
                 Section: { select: { name: true } }
@@ -186,9 +201,9 @@ exports.generateBulkCertificates = asyncHandler(async (req, res) => {
     }
 
     const [template, students] = await Promise.all([
-        prisma.certificateTemplate.findUnique({ where: { id: templateId } }),
+        prisma.certificateTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
         prisma.student.findMany({
-            where: { id: { in: studentIds } },
+            where: { id: { in: studentIds }, schoolId: req.user.schoolId },
             include: {
                 Class: { select: { name: true } },
                 Section: { select: { name: true } }
@@ -214,10 +229,11 @@ exports.generateStudentIdCard = asyncHandler(async (req, res) => {
     }
 
     const [template, students] = await Promise.all([
-        prisma.idCardTemplate.findUnique({ where: { id: templateId } }),
+        prisma.idCardTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
         prisma.student.findMany({
             where: {
                 id: { in: studentIds },
+                schoolId: req.user.schoolId,
                 isDisabled: false
             },
             include: {
@@ -243,10 +259,11 @@ exports.generateStaffIdCard = asyncHandler(async (req, res) => {
     }
 
     const [template, staffMembers] = await Promise.all([
-        prisma.idCardTemplate.findUnique({ where: { id: templateId } }),
+        prisma.idCardTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
         prisma.staff.findMany({
             where: {
                 id: { in: staffIds },
+                schoolId: req.user.schoolId,
                 isDisabled: false
             },
             include: {
@@ -273,8 +290,8 @@ exports.generateTransferCertificate = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Student ID and leaving date are required");
     }
 
-    const student = await prisma.student.findUnique({
-        where: { id: studentId },
+    const student = await prisma.student.findFirst({
+        where: { id: studentId, schoolId: req.user.schoolId },
         include: {
             Class: { select: { name: true } },
             Section: { select: { name: true } },

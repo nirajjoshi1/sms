@@ -38,7 +38,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
 
 exports.createEvent = asyncHandler(async (req, res) => {
     const event = await prisma.event.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, event, "Event created successfully"));
 });
@@ -97,7 +97,7 @@ exports.getGalleryImageById = asyncHandler(async (req, res) => {
 
 exports.createGalleryImage = asyncHandler(async (req, res) => {
     const image = await prisma.gallery.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, image, "Gallery image created successfully"));
 });
@@ -156,7 +156,7 @@ exports.getNewsById = asyncHandler(async (req, res) => {
 
 exports.createNews = asyncHandler(async (req, res) => {
     const news = await prisma.news.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, news, "News created successfully"));
 });
@@ -215,7 +215,7 @@ exports.uploadMediaFile = asyncHandler(async (req, res) => {
     }
 
     const file = await prisma.mediaFile.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             url,
             type: type || 'image',
@@ -278,7 +278,7 @@ exports.getPageById = asyncHandler(async (req, res) => {
 
 exports.createPage = asyncHandler(async (req, res) => {
     const page = await prisma.cmsPage.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, page, "Page created successfully"));
 });
@@ -341,7 +341,7 @@ exports.getMenuById = asyncHandler(async (req, res) => {
 
 exports.createMenu = asyncHandler(async (req, res) => {
     const menu = await prisma.menu.create({
-        data: { ...req.body },
+        data: { schoolId: req.user.schoolId, ...req.body },
         include: {
             Children: true,
             Parent: true
@@ -401,7 +401,7 @@ exports.getBannerById = asyncHandler(async (req, res) => {
 
 exports.createBanner = asyncHandler(async (req, res) => {
     const banner = await prisma.bannerImage.create({
-        data: { ...req.body }
+        data: { schoolId: req.user.schoolId, ...req.body }
     });
     res.status(201).json(new ApiResponse(201, banner, "Banner created successfully"));
 });

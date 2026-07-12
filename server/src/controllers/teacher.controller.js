@@ -336,7 +336,7 @@ exports.createHomework = asyncHandler(async (req, res) => {
     await ensureSubjectAccess(staff, classId, sectionId, subjectId);
 
     const homework = await prisma.homework.create({
-        data: { title, description, dueDate: new Date(dueDate), classId, sectionId, subjectId, staffId: staff.id, attachmentUrl: attachmentUrl || null, schoolId: staff.schoolId || null },
+        data: { schoolId: req.user.schoolId, title, description, dueDate: new Date(dueDate), classId, sectionId, subjectId, staffId: staff.id, attachmentUrl: attachmentUrl || null, schoolId: staff.schoolId || null },
         include: {
             Class: { select: { name: true } },
             Section: { select: { name: true } },

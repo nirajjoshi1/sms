@@ -104,23 +104,11 @@ app.get("/health", (req, res) => {
     res.status(200).json({
         status: "ok",
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || "development"
+        uptime: process.uptime()
     });
 });
 
-// Debug endpoint (development only)
-if (process.env.NODE_ENV !== "production") {
-    app.get("/api/v1/debug", (req, res) => {
-        res.json({
-            url: req.url,
-            originalUrl: req.originalUrl,
-            baseUrl: req.baseUrl,
-            path: req.path,
-            method: req.method
-        });
-    });
-}
+// Debug endpoint completely removed as per security audit requirements
 
 // API status endpoint
 app.get("/api/v1", (req, res) => {
@@ -132,11 +120,44 @@ app.get("/api/v1", (req, res) => {
     });
 });
 
+// CSRF Protection for API (Enforce JSON or AJAX for mutations)
+const csrfProtection = (req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        const contentType = req.headers['content-type'] || '';
+        const requestedWith = req.headers['x-requested-with'] || '';
+        
+        // Allow multipart/form-data for uploads, but strictly require x-requested-with header for CSRF
+        if (contentType.includes('multipart/form-data') && requestedWith !== 'XMLHttpRequest') {
+             return res.status(403).json({ success: false, message: 'CSRF token missing or incorrect headers for file upload.' });
+        }
+        
+        // For other endpoints, enforce application/json
+        if (!contentType.includes('application/json') && !contentType.includes('multipart/form-data')) {
+            return res.status(403).json({ success: false, message: 'Invalid Content-Type. CSRF protection requires application/json.' });
+        }
+    }
+    next();
+};
+
+app.use(csrfProtection);
+
 // Conditional rate limiting middleware wrapper
 const conditionalAuthLimiter = process.env.NODE_ENV === 'production' ? authLimiter : (req, res, next) => next();
 const conditionalApiLimiter = process.env.NODE_ENV === 'production' ? apiLimiter : (req, res, next) => next();
 
+// Reset password rate limiter
+const resetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 requests per hour
+    message: "Too many password reset attempts, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+const conditionalResetLimiter = process.env.NODE_ENV === 'production' ? resetLimiter : (req, res, next) => next();
+
 // Public Routes (no auth required) - with rate limiting
+app.use("/api/v1/auth/forgot-password", conditionalResetLimiter);
+app.use("/api/v1/auth/reset-password", conditionalResetLimiter);
 app.use("/api/v1/auth", conditionalAuthLimiter, authRoutes);
 app.use("/api/v1/school-requests", schoolRequestRoutes);
 

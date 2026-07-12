@@ -9,6 +9,8 @@ const { logAudit } = require('../utils/audit');
 // =====================================
 exports.getIncomeHeads = asyncHandler(async (req, res) => {
     const heads = await prisma.incomeHead.findMany({
+        where: { schoolId: req.user.schoolId },
+
         orderBy: { name: 'asc' }
     });
     res.status(200).json(new ApiResponse(200, heads, "Income heads fetched successfully"));
@@ -27,7 +29,7 @@ exports.createIncomeHead = asyncHandler(async (req, res) => {
     }
 
     const head = await prisma.incomeHead.create({
-        data: { name, description }
+        data: { schoolId: req.user.schoolId, name, description }
     });
     res.status(201).json(new ApiResponse(201, head, "Income head created successfully"));
 });
@@ -96,7 +98,7 @@ exports.createIncome = asyncHandler(async (req, res) => {
     }
 
     const income = await prisma.income.create({
-        data: {
+        data: { schoolId: req.user.schoolId,
             name,
             invoiceNumber,
             date: new Date(date),

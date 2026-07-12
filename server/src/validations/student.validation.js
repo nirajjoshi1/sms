@@ -52,10 +52,17 @@ const createDisableReason = {
     }).strict()
 };
 
+const bulkDeleteStudents = {
+    body: z.object({
+        studentIds: z.array(z.string().uuid("Invalid Student ID")).min(1, "Student IDs are required")
+    }).strict()
+};
+
 module.exports = {
     admitStudent,
     updateStudent,
     createCategory,
     createHouse,
-    createDisableReason
+    createDisableReason,
+    bulkDeleteStudents
 };
