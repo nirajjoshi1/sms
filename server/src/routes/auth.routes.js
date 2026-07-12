@@ -9,6 +9,7 @@ const authValidation = require('../validations/auth.validation');
 // Public routes
 router.post('/login', validate(authValidation.login), authController.login);
 router.post('/logout', authController.logout);
+router.post('/logout-all', verifyJWT, authController.logoutAll);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 

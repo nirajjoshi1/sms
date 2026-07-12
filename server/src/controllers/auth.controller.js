@@ -39,9 +39,9 @@ exports.createUser = asyncHandler(async (req, res) => {
     // Normalize email
     email = email.trim().toLowerCase();
 
-    // Password strength validation (basic)
-    if (password.length < 8) {
-        throw new ApiError(400, "Password must be at least 8 characters long");
+    // Password strength validation
+    if (password.length < 10) {
+        throw new ApiError(400, "Password must be at least 10 characters long");
     }
 
     const creatorRole = req.user.role;
@@ -211,6 +211,31 @@ exports.logout = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
+// @desc    Logout user from all sessions
+// @route   POST /api/v1/auth/logout-all
+exports.logoutAll = asyncHandler(async (req, res) => {
+    // Increment tokenVersion to invalidate all existing tokens globally
+    await prisma.user.update({
+        where: { id: req.user.id },
+        data: { tokenVersion: { increment: 1 } }
+    });
+    
+    await logAudit({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        action: 'LOGOUT_ALL',
+        resource: 'User',
+        resourceId: req.user.id,
+        details: { message: "Revoked all active sessions" },
+        schoolId: req.user.schoolId
+    });
+
+    const { maxAge, ...clearOptions } = getAuthCookieOptions();
+    return res.status(200)
+        .clearCookie('token', clearOptions)
+        .json(new ApiResponse(200, {}, "Logged out from all sessions successfully"));
+});
+
 // @desc    Get logged-in user profile
 // @route   GET /api/v1/auth/me
 exports.getMe = asyncHandler(async (req, res) => {
@@ -286,8 +311,8 @@ exports.toggleUserStatus = asyncHandler(async (req, res) => {
 exports.changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
-    if (!newPassword || newPassword.length < 8) {
-        throw new ApiError(400, "New password must be at least 8 characters long");
+    if (!newPassword || newPassword.length < 10) {
+        throw new ApiError(400, "New password must be at least 10 characters long");
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -350,7 +375,7 @@ const sendResetEmail = async (email, token, schoolId) => {
                 html: `<p>You requested a password reset. Please click on the link below to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`
             });
             console.log(`[EMAIL] Sent reset password email to ${email}`);
-        } else {
+        } else if (process.env.NODE_ENV !== 'production') {
             console.log(`\n========================================\n[DEV-EMAIL-LOG] Password reset request for ${email}\nToken: ${token}\nReset Link: ${resetLink}\n========================================\n`);
         }
     } catch (error) {
@@ -409,8 +434,8 @@ exports.resetPassword = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Token and password are required");
     }
 
-    if (password.length < 8) {
-        throw new ApiError(400, "Password must be at least 8 characters long");
+    if (password.length < 10) {
+        throw new ApiError(400, "Password must be at least 10 characters long");
     }
 
     const crypto = require('crypto');
