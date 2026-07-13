@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Users, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { useConfirm } from '../../context/ConfirmContext';
+import AssignStudentsModal from './AssignStudentsModal';
 
 const Category = () => {
   const confirm = useConfirm();
@@ -16,6 +17,9 @@ const Category = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Modal states
+  const [assignStudentsModal, setAssignStudentsModal] = useState({ isOpen: false, category: null });
 
   const fetchCategories = async () => {
     try {
@@ -186,13 +190,21 @@ const Category = () => {
                         <div className="flex items-center gap-1.5">
                           <Users className="w-3 h-3 text-muted-foreground" />
                           <span className="text-[10px] font-bold text-muted-foreground">
-                            {category._count?.students || 0}
+                            {category._count?.Student || 0}
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            title="Assign Students"
+                            onClick={() => setAssignStudentsModal({ isOpen: true, category })}
+                            className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
+                          >
+                            <UserPlus className="w-3 h-3" />
+                          </button>
+                          <button
+                            title="Edit Category"
                             onClick={() => handleEdit(category)}
                             className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
                           >
@@ -200,7 +212,7 @@ const Category = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(category.id)}
-                            disabled={category._count?.students > 0}
+                            disabled={category._count?.Student > 0}
                             className="p-1.5 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-md transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -268,6 +280,15 @@ const Category = () => {
           </div>
         </div>
       </div>
+
+      <AssignStudentsModal
+        isOpen={assignStudentsModal.isOpen}
+        onClose={() => setAssignStudentsModal({ isOpen: false, category: null })}
+        onSuccess={fetchCategories}
+        targetId={assignStudentsModal.category?.id}
+        targetName={assignStudentsModal.category?.name}
+        targetType="category"
+      />
     </div>
   );
 };

@@ -6,6 +6,44 @@ const prisma = require('../config/prisma');
 const { cloudinary } = require('../config/cloudinary');
 const { logAudit } = require('../utils/audit');
 
+// Internal helper to automatically assign roll/enroll numbers
+const autoAssignStudentNumbers = async (schoolId) => {
+    const students = await prisma.student.findMany({
+        where: { schoolId, isDisabled: false },
+        orderBy: [
+            { firstName: 'asc' },
+            { middleName: 'asc' },
+            { lastName: 'asc' }
+        ]
+    });
+
+    if (!students || students.length === 0) return;
+
+    const updates = [];
+    const classSectionRollCounts = {};
+
+    for (let i = 0; i < students.length; i++) {
+        const student = students[i];
+        const enrollNumber = `ENR-${(i + 1).toString().padStart(4, '0')}`;
+        
+        const groupKey = `${student.classId}-${student.sectionId}`;
+        if (!classSectionRollCounts[groupKey]) {
+            classSectionRollCounts[groupKey] = 0;
+        }
+        classSectionRollCounts[groupKey]++;
+        const rollNumber = classSectionRollCounts[groupKey].toString();
+
+        updates.push(
+            prisma.student.update({
+                where: { id: student.id },
+                data: { enrollNumber, rollNumber, updatedAt: new Date() }
+            })
+        );
+    }
+
+    await prisma.$transaction(updates);
+};
+
 // Get all students with pagination and search
 exports.getStudents = asyncHandler(async (req, res) => {
     const { page = 1, limit = 50, search = '', classId, sectionId, categoryId, houseId, gender } = req.query;
@@ -164,7 +202,8 @@ exports.admitStudent = asyncHandler(async (req, res) => {
             guardianRelation: guardianRelation || null,
             guardianPhone,
             guardianAddress: guardianAddress || null,
-            schoolId: req.user.schoolId
+            schoolId: req.user.schoolId,
+            updatedAt: new Date()
         },
         include: {
             Class: true,
@@ -195,7 +234,78 @@ exports.admitStudent = asyncHandler(async (req, res) => {
         schoolId: req.user.schoolId
     });
 
+    await autoAssignStudentNumbers(req.user.schoolId);
+
     res.status(201).json(new ApiResponse(201, student, `Student admitted successfully with Admission No: ${admissionNo}`));
+});
+
+// Bulk Admit Students
+exports.bulkAdmitStudents = asyncHandler(async (req, res) => {
+    const { classId, sectionId, students } = req.body;
+
+    if (!classId || !sectionId || !students || !students.length) {
+        throw new ApiError(400, "Missing required fields");
+    }
+
+    // Auto-generate admission numbers starting from the last known number
+    let lastStudent = await prisma.student.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { admissionNo: true }
+    });
+
+    let currentNum = 0;
+    if (lastStudent && lastStudent.admissionNo) {
+        const lastNum = parseInt(lastStudent.admissionNo);
+        if (!isNaN(lastNum)) {
+            currentNum = lastNum;
+        }
+    }
+
+    const studentsToCreate = students.map((student, index) => {
+        let admissionNo = student.admissionNo;
+        if (!admissionNo) {
+            if (currentNum > 0) {
+                admissionNo = (currentNum + index + 1).toString();
+            } else {
+                admissionNo = `ADM-${Date.now()}-${index}`;
+            }
+        }
+
+        return {
+            admissionNo,
+            enrollNumber: student.enrollNumber || null,
+            firstName: student.firstName,
+            middleName: student.middleName || null,
+            lastName: student.lastName || null,
+            gender: student.gender || 'Other',
+            dob: student.dob ? new Date(student.dob) : new Date(),
+            mobileNumber: student.mobileNumber || null,
+            email: student.email || null,
+            admissionDate: student.admissionDate ? new Date(student.admissionDate) : new Date(),
+            classId,
+            sectionId,
+            categoryId: student.categoryId || null,
+            houseId: student.houseId || null,
+            fatherName: student.fatherName || null,
+            fatherPhone: student.fatherPhone || null,
+            motherName: student.motherName || null,
+            motherPhone: student.motherPhone || null,
+            guardianIs: student.guardianIs || 'Father',
+            guardianName: student.guardianName || student.fatherName || student.motherName || 'Unknown',
+            guardianRelation: student.guardianRelation || null,
+            guardianPhone: student.guardianPhone || student.fatherPhone || student.motherPhone || '0000000000',
+            guardianAddress: student.guardianAddress || null,
+            isDisabled: false,
+            schoolId: req.user.schoolId
+        };
+    });
+
+    const result = await prisma.student.createMany({
+        data: studentsToCreate,
+        skipDuplicates: true
+    });
+
+    res.status(201).json(new ApiResponse(201, { count: result.count }, `${result.count} students imported successfully`));
 });
 
 // Get student details by ID
@@ -292,7 +402,8 @@ exports.updateStudent = asyncHandler(async (req, res) => {
             guardianName: guardianName || existingStudent.guardianName,
             guardianRelation: guardianRelation !== undefined ? guardianRelation : existingStudent.guardianRelation,
             guardianPhone: guardianPhone || existingStudent.guardianPhone,
-            guardianAddress: guardianAddress !== undefined ? guardianAddress : existingStudent.guardianAddress
+            guardianAddress: guardianAddress !== undefined ? guardianAddress : existingStudent.guardianAddress,
+            updatedAt: new Date()
         },
         include: {
             Class: true,
@@ -301,6 +412,8 @@ exports.updateStudent = asyncHandler(async (req, res) => {
             House: true
         }
     });
+
+    await autoAssignStudentNumbers(req.user.schoolId);
 
     res.status(200).json(new ApiResponse(200, student, "Student updated successfully"));
 });
@@ -314,8 +427,10 @@ exports.deleteStudent = asyncHandler(async (req, res) => {
 
     await prisma.student.update({
         where: { id },
-        data: { isDisabled: true }
+        data: { isDisabled: true, updatedAt: new Date() }
     });
+
+    await autoAssignStudentNumbers(req.user.schoolId);
 
     res.status(200).json(new ApiResponse(200, null, "Student deleted successfully"));
 });
@@ -332,7 +447,8 @@ exports.toggleStudentStatus = asyncHandler(async (req, res) => {
         where: { id },
         data: {
             isDisabled,
-            disableReasonId: isDisabled ? disableReasonId : null
+            disableReasonId: isDisabled ? disableReasonId : null,
+            updatedAt: new Date()
         },
         include: {
             Class: true,
@@ -354,8 +470,11 @@ exports.bulkDeleteStudents = asyncHandler(async (req, res) => {
 
     const result = await prisma.student.updateMany({
         where: { id: { in: studentIds }, schoolId: req.user.schoolId },
-        data: { isDisabled: true }
+        data: { isDisabled: true, updatedAt: new Date() }
     });
+
+    await autoAssignStudentNumbers(req.user.schoolId);
 
     res.status(200).json(new ApiResponse(200, { count: result.count }, `${result.count} students deleted successfully`));
 });
+

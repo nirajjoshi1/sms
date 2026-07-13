@@ -1,110 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Home, Users, ChevronLeft, ChevronRight, UserPlus, Crown } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ShieldAlert, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { useConfirm } from '../../context/ConfirmContext';
-import AssignStudentsModal from './AssignStudentsModal';
-import AssignCaptainsModal from './AssignCaptainsModal';
 
-const House = () => {
+const DisableReason = () => {
   const confirm = useConfirm();
 
-  const [houses, setHouses] = useState([]);
+  const [reasons, setReasons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [reasonText, setReasonText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingHouse, setEditingHouse] = useState(null);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: ''
-  });
+  const [editingReason, setEditingReason] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Modal states
-  const [assignStudentsModal, setAssignStudentsModal] = useState({ isOpen: false, house: null });
-  const [assignCaptainsModal, setAssignCaptainsModal] = useState({ isOpen: false, house: null });
-
-  const fetchHouses = async () => {
+  const fetchReasons = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/student-setup/houses');
-      setHouses(response.data.data || []);
+      const response = await api.get('/student-setup/disable-reasons');
+      setReasons(response.data.data || []);
     } catch (error) {
-      toast.error('Failed to fetch houses');
+      toast.error('Failed to fetch disable reasons');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchHouses();
+    fetchReasons();
   }, []);
 
-  const handleEdit = (house) => {
-    setEditingHouse(house);
-    setFormData({
-      name: house.name,
-      description: house.description || ''
-    });
+  const handleEdit = (reason) => {
+    setEditingReason(reason);
+    setReasonText(reason.reason);
   };
 
   const cancelEdit = () => {
-    setEditingHouse(null);
-    setFormData({ name: '', description: '' });
+    setEditingReason(null);
+    setReasonText('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return toast.error('House name is required');
+    if (!reasonText.trim()) return toast.error('Reason text is required');
 
     try {
       setSubmitting(true);
-      if (editingHouse) {
-        await api.put(`/student-setup/houses/${editingHouse.id}`, formData);
-        toast.success('House updated successfully');
+      if (editingReason) {
+        await api.put(`/student-setup/disable-reasons/${editingReason.id}`, { reason: reasonText });
+        toast.success('Reason updated successfully');
       } else {
-        await api.post('/student-setup/houses', formData);
-        toast.success('House added successfully');
+        await api.post('/student-setup/disable-reasons', { reason: reasonText });
+        toast.success('Reason added successfully');
       }
       cancelEdit();
       setCurrentPage(1);
-      fetchHouses();
+      fetchReasons();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save house');
+      toast.error(error.response?.data?.message || 'Failed to save reason');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!await confirm('Are you sure you want to delete this house? This may affect student records.')) return;
+    if (!await confirm('Are you sure you want to delete this disable reason?')) return;
     try {
-      await api.delete(`/student-setup/houses/${id}`);
-      toast.success('House deleted');
-      fetchHouses();
+      await api.delete(`/student-setup/disable-reasons/${id}`);
+      toast.success('Reason deleted');
+      fetchReasons();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete house');
+      toast.error(error.response?.data?.message || 'Failed to delete reason');
     }
   };
 
-  const filteredHouses = houses.filter(h =>
-    h.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredReasons = reasons.filter(r =>
+    r.reason.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredHouses.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredReasons.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredHouses.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredReasons.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="p-4 space-y-4 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 border-b border-border pb-3">
         <div>
-          <h1 className="text-lg font-black text-foreground tracking-tight">Student Houses</h1>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">Manage student houses (Red, Blue, Green, Yellow)</p>
+          <h1 className="text-lg font-black text-foreground tracking-tight">Disable Reasons</h1>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">Manage reasons for disabling student accounts</p>
         </div>
       </div>
 
@@ -113,9 +100,9 @@ const House = () => {
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden sticky top-4">
             <div className="px-3 py-2 border-b border-border bg-muted/10 flex items-center justify-between">
               <h3 className="text-[10px] font-bold text-foreground uppercase tracking-widest">
-                {editingHouse ? 'Update House' : 'Add House'}
+                {editingReason ? 'Update Reason' : 'Add Reason'}
               </h3>
-              {editingHouse && (
+              {editingReason && (
                 <button
                   onClick={cancelEdit}
                   className="text-[9px] font-bold text-primary hover:underline uppercase tracking-tight"
@@ -126,25 +113,14 @@ const House = () => {
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">House Name *</label>
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Reason *</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Red House, Blue House"
+                  value={reasonText}
+                  onChange={(e) => setReasonText(e.target.value)}
+                  placeholder="e.g. Graduated, Transferred, Dropped Out"
                   className="w-full h-8 bg-muted/30 border border-border rounded-lg px-2.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all"
                   required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Description (Optional)</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description..."
-                  rows="3"
-                  className="w-full bg-muted/30 border border-border rounded-lg px-2.5 py-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all resize-none"
                 />
               </div>
 
@@ -157,8 +133,8 @@ const House = () => {
                   <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    {editingHouse ? <Edit2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                    {editingHouse ? 'Update' : 'Save House'}
+                    {editingReason ? <Edit2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                    {editingReason ? 'Update' : 'Save Reason'}
                   </>
                 )}
               </button>
@@ -178,7 +154,7 @@ const House = () => {
             )}
 
             <div className="px-3 py-2 border-b border-border bg-muted/10 flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-foreground uppercase tracking-widest">House List</h3>
+              <h3 className="text-[10px] font-bold text-foreground uppercase tracking-widest">Reason List</h3>
               <div className="relative w-40">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
                 <input
@@ -195,61 +171,37 @@ const House = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-muted/5 border-b border-border">
-                    <th className="px-4 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">House</th>
-                    <th className="px-4 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Description</th>
+                    <th className="px-4 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Reason</th>
                     <th className="px-4 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Students</th>
                     <th className="px-4 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {!loading && currentItems.length > 0 ? currentItems.map((house) => (
-                    <tr key={house.id} className="hover:bg-muted/5 transition-colors group">
+                  {!loading && currentItems.length > 0 ? currentItems.map((reason) => (
+                    <tr key={reason.id} className="hover:bg-muted/5 transition-colors group">
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <Home className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-[11px] font-bold text-foreground">{house.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span className="text-[10px] text-muted-foreground">
-                          {house.description || '-'}
-                        </span>
+                        <span className="text-[11px] font-bold text-foreground">{reason.reason}</span>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
-                          <Users className="w-3 h-3 text-muted-foreground" />
+                          <ShieldAlert className="w-3 h-3 text-muted-foreground" />
                           <span className="text-[10px] font-bold text-muted-foreground">
-                            {house._count?.Student || 0}
+                            {reason._count?.Student || 0}
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            title="Assign Students"
-                            onClick={() => setAssignStudentsModal({ isOpen: true, house })}
-                            className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
-                          >
-                            <UserPlus className="w-3 h-3" />
-                          </button>
-                          <button
-                            title="Assign Leaders"
-                            onClick={() => setAssignCaptainsModal({ isOpen: true, house })}
-                            className="p-1.5 hover:bg-amber-500/10 hover:text-amber-500 text-muted-foreground rounded-md transition-all"
-                          >
-                            <Crown className="w-3 h-3" />
-                          </button>
-                          <button
-                            title="Edit House"
-                            onClick={() => handleEdit(house)}
+                            title="Edit Reason"
+                            onClick={() => handleEdit(reason)}
                             className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
                           >
                             <Edit2 className="w-3 h-3" />
                           </button>
                           <button
-                            title="Delete House"
-                            onClick={() => handleDelete(house.id)}
-                            disabled={house._count?.Student > 0}
+                            onClick={() => handleDelete(reason.id)}
+                            disabled={reason._count?.Student > 0}
                             className="p-1.5 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-md transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -259,10 +211,10 @@ const House = () => {
                     </tr>
                   )) : !loading && (
                     <tr>
-                      <td colSpan="4" className="px-4 py-12 text-center">
+                      <td colSpan="3" className="px-4 py-12 text-center">
                         <div className="flex flex-col items-center gap-2 opacity-50">
-                          <Home className="w-6 h-6 text-muted-foreground" />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">No houses found</p>
+                          <ShieldAlert className="w-6 h-6 text-muted-foreground" />
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">No reasons found</p>
                         </div>
                       </td>
                     </tr>
@@ -271,10 +223,10 @@ const House = () => {
               </table>
             </div>
 
-            {!loading && filteredHouses.length > 0 && (
+            {!loading && filteredReasons.length > 0 && (
               <div className="px-3 py-2 bg-muted/5 border-t border-border flex items-center justify-between">
                 <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
-                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredHouses.length)} of {filteredHouses.length}
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredReasons.length)} of {filteredReasons.length}
                 </p>
 
                 {totalPages > 1 && (
@@ -317,24 +269,8 @@ const House = () => {
           </div>
         </div>
       </div>
-
-      <AssignStudentsModal
-        isOpen={assignStudentsModal.isOpen}
-        onClose={() => setAssignStudentsModal({ isOpen: false, house: null })}
-        onSuccess={fetchHouses}
-        targetId={assignStudentsModal.house?.id}
-        targetName={assignStudentsModal.house?.name}
-        targetType="house"
-      />
-
-      <AssignCaptainsModal
-        isOpen={assignCaptainsModal.isOpen}
-        onClose={() => setAssignCaptainsModal({ isOpen: false, house: null })}
-        onSuccess={fetchHouses}
-        house={assignCaptainsModal.house}
-      />
     </div>
   );
 };
 
-export default House;
+export default DisableReason;

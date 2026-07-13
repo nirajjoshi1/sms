@@ -107,6 +107,21 @@ const StudentList = () => {
     }
   };
 
+  const handleGenerateNumbers = async () => {
+    if (!await confirm('This will re-assign roll numbers and enroll numbers for all students alphabetically. Are you sure you want to proceed?')) return;
+    
+    try {
+      setLoading(true);
+      const res = await api.post('/students/generate-numbers');
+      toast.success(res.data.message || 'Numbers generated successfully');
+      fetchStudents();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate numbers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearFilters = () => {
     setFilters({
       classId: '',
@@ -246,12 +261,12 @@ const StudentList = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden relative">
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden relative min-h-[400px]">
         {loading && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-widest animate-pulse">Loading...</span>
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <span className="text-xs font-bold text-primary uppercase tracking-widest animate-pulse">Loading students...</span>
             </div>
           </div>
         )}
@@ -285,7 +300,6 @@ const StudentList = () => {
                         <p className="text-[11px] font-bold text-foreground">
                           {student.firstName} {student.middleName} {student.lastName}
                         </p>
-                        <p className="text-[9px] text-muted-foreground">{student.rollNumber || '-'}</p>
                       </div>
                     </div>
                   </td>

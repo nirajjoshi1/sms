@@ -154,6 +154,15 @@ html {
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Global button styles */
+button, 
+[role="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  cursor: pointer;
+}
+
 /* Toast Customization - Simple & Minimal */
 [data-sonner-toast] {
   border-radius: 8px !important;

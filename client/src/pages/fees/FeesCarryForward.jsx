@@ -22,18 +22,12 @@ const FeesCarryForward = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const classesRes = await api.get('/academics/classes');
-      setClasses(classesRes.data.data || []);
-
-      // For sessions, we'll use hardcoded academic years for now
-      // In a real app, you'd have an academic sessions API
-      const currentYear = new Date().getFullYear();
-      setSessions([
-        { id: `${currentYear-2}-${currentYear-1}`, name: `${currentYear-2}-${currentYear-1}` },
-        { id: `${currentYear-1}-${currentYear}`, name: `${currentYear-1}-${currentYear}` },
-        { id: `${currentYear}-${currentYear+1}`, name: `${currentYear}-${currentYear+1}` },
-        { id: `${currentYear+1}-${currentYear+2}`, name: `${currentYear+1}-${currentYear+2}` }
+      const [classesRes, sessionsRes] = await Promise.all([
+        api.get('/academics/classes'),
+        api.get('/settings/sessions')
       ]);
+      setClasses(classesRes.data.data || []);
+      setSessions(sessionsRes.data.data || []);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to fetch data'));
     } finally {

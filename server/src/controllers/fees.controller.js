@@ -217,7 +217,7 @@ exports.getFeeMasters = asyncHandler(async (req, res) => {
 });
 
 exports.createFeeMaster = asyncHandler(async (req, res) => {
-    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId } = req.body;
+    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId, sectionId, studentId } = req.body;
 
     const master = await prisma.feeMaster.create({
         data: { schoolId: req.user.schoolId,
@@ -228,12 +228,16 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
             fixAmount: fixAmount ? parseFloat(fixAmount) : null,
             feeGroupId,
             feeTypeId,
-            classId: classId || null
+            classId: classId || null,
+            sectionId: sectionId || null,
+            studentId: studentId || null
         },
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true, code: true } },
-            Class: { select: { name: true } }
+            Class: { select: { name: true } },
+            Section: { select: { name: true } },
+            Student: { select: { firstName: true, lastName: true } }
         }
     });
     res.status(201).json(new ApiResponse(201, master, "Fee master created successfully"));
@@ -241,7 +245,7 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
 
 exports.updateFeeMaster = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId } = req.body;
+    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId, sectionId, studentId } = req.body;
 
     const master = await prisma.feeMaster.update({
         where: { id },
@@ -253,12 +257,16 @@ exports.updateFeeMaster = asyncHandler(async (req, res) => {
             fixAmount: fixAmount ? parseFloat(fixAmount) : null,
             feeGroupId,
             feeTypeId,
-            classId: classId || null
+            classId: classId || null,
+            sectionId: sectionId || null,
+            studentId: studentId || null
         },
         include: {
             FeeGroup: { select: { name: true } },
             FeeType: { select: { name: true, code: true } },
-            Class: { select: { name: true } }
+            Class: { select: { name: true } },
+            Section: { select: { name: true } },
+            Student: { select: { firstName: true, lastName: true } }
         }
     });
     res.status(200).json(new ApiResponse(200, master, "Fee master updated successfully"));
@@ -440,6 +448,48 @@ exports.collectFee = asyncHandler(async (req, res) => {
     res.status(201).json(new ApiResponse(201, payment, "Fee collected successfully"));
 });
 
+// Send manual fee reminder
+exports.sendFeeReminder = asyncHandler(async (req, res) => {
+    const { studentId, type } = req.body;
+    
+    if (!studentId) {
+        throw new ApiError(400, "Student ID is required");
+    }
+
+    const student = await prisma.student.findUnique({
+        where: { id: studentId }
+    });
+
+    if (!student) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    try {
+        const { createNotification } = require('../utils/notification');
+        await createNotification({
+            title: type || "Fee Reminder",
+            message: `Dear Parent/Guardian, this is a reminder regarding the pending fee for ${student.firstName} ${student.lastName || ''}.`,
+            type: "fee_reminder"
+        });
+        
+        // Log the reminder
+        await logAudit({
+            userId: req.user.id,
+            userEmail: req.user.email,
+            action: 'SEND_FEE_REMINDER',
+            resource: 'Student',
+            resourceId: student.id,
+            details: { type, studentId },
+            schoolId: req.user.schoolId
+        });
+        
+        res.status(200).json(new ApiResponse(200, null, "Fee reminder sent successfully"));
+    } catch (err) {
+        console.error("Failed to send manual fee reminder:", err);
+        throw new ApiError(500, "Failed to send fee reminder");
+    }
+});
+
 exports.searchFeePayments = asyncHandler(async (req, res) => {
     const { studentId, classId, fromDate, toDate, search } = req.query;
 
@@ -529,7 +579,23 @@ exports.getDueFees = asyncHandler(async (req, res) => {
     // Calculate due fees for each student
     const dueFeesData = students.map(student => {
         const totalExpected = feeMasters.reduce((sum, master) => {
-            if (!master.classId || master.classId === student.classId) {
+            let appliesToStudent = false;
+
+            if (master.studentId) {
+                // Specific student
+                appliesToStudent = master.studentId === student.id;
+            } else if (master.sectionId) {
+                // Specific section
+                appliesToStudent = master.sectionId === student.sectionId;
+            } else if (master.classId) {
+                // Specific class
+                appliesToStudent = master.classId === student.classId;
+            } else {
+                // Global fee
+                appliesToStudent = true;
+            }
+
+            if (appliesToStudent) {
                 let amount = Number(master.amount);
                 // Calculate automatic fine if past due date
                 if (master.dueDate && new Date(master.dueDate) < new Date()) {
@@ -564,81 +630,9 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 });
 
 exports.carryForwardFees = asyncHandler(async (req, res) => {
-    const { fromSession, toSession, classId } = req.body;
-
-    if (!fromSession || !toSession) {
-        throw new ApiError(400, "From session and to session are required");
-    }
-
-    if (fromSession === toSession) {
-        throw new ApiError(400, "From session and to session cannot be the same");
-    }
-
-    // Get students with due fees
-    const students = await prisma.student.findMany({
-        where: {
-            isDisabled: false,
-            ...(classId && { classId })
-        },
-        include: {
-            FeePayment: {
-                where: { session: fromSession }
-            }
-        }
-    });
-
-    // Get all fee masters for the from-session
-    const feeMasters = await prisma.feeMaster.findMany({
-        where: { session: fromSession }
-    });
-
-    let carriedForwardCount = 0;
-    const carryForwardRecords = [];
-
-    // For each student, calculate due amount in the from-session
-    for (const student of students) {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
-        const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount || payment.amount || 0), 0);
-        const dueAmount = totalExpected - totalPaid;
-
-        if (dueAmount > 0) {
-            // Check if a carry-forward record already exists for this student in toSession
-            const existing = await prisma.feePayment.findFirst({
-                where: {
-                    studentId: student.id,
-                    session: toSession,
-                    paymentMode: 'carry_forward'
-                }
-            });
-
-            if (!existing) {
-                carryForwardRecords.push({
-                    studentId: student.id,
-                    amount: dueAmount,
-                    netAmount: dueAmount,
-                    session: toSession,
-                    paymentDate: new Date(),
-                    paymentMode: 'carry_forward',
-                    receiptNo: `CF-${fromSession.replace(/\s/g, '')}-${student.id.slice(0, 6).toUpperCase()}`,
-                    status: 'Due',
-                    note: `Carried forward from session ${fromSession}`
-                });
-                carriedForwardCount++;
-            }
-        }
-    }
-
-    // Bulk create all carry-forward records
-    if (carryForwardRecords.length > 0) {
-        await prisma.feePayment.createMany({ data: carryForwardRecords });
-    }
-
-    res.status(200).json(new ApiResponse(200, {
-        studentsProcessed: students.length,
-        feesCarriedForward: carriedForwardCount,
-        fromSession,
-        toSession,
-        alreadyExisted: students.length - carriedForwardCount
-    }, `Fees carried forward successfully for ${carriedForwardCount} students from ${fromSession} to ${toSession}`));
+    // The current database schema does not have a "session" field on FeeMaster or FeePayment.
+    // FeeMaster is global/class-wide, and FeePayments are just applied to the student's total expected.
+    // To properly support carry-forward, a new 'StudentFee' or 'StudentSessionBalance' model is required.
+    throw new ApiError(501, "Carry Forward Fees feature requires session-based fee tracking, which is not supported by the current database schema.");
 });
 

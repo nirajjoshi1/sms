@@ -14,6 +14,7 @@ router.use(requireSchoolContext);
 // Get all students
 router.get('/', requirePermission(PERMISSIONS.STUDENTS_READ), studentController.getStudents);
 
+
 // Get disabled students
 router.get('/disabled', requirePermission(PERMISSIONS.STUDENTS_READ), studentController.getDisabledStudents);
 
@@ -27,6 +28,13 @@ router.post(
     ]),
     validate(studentValidation.admitStudent),
     studentController.admitStudent
+);
+
+// Bulk admit students
+router.post('/bulk-admit',
+    requirePermission(PERMISSIONS.STUDENT_CREATE),
+    validate(studentValidation.bulkAdmitStudents),
+    studentController.bulkAdmitStudents
 );
 
 // Bulk delete students
