@@ -161,7 +161,6 @@ app.use("/api/v1/auth/reset-password", conditionalResetLimiter);
 app.use("/api/v1/auth", conditionalAuthLimiter, authRoutes);
 app.use("/api/v1/school-requests", schoolRequestRoutes);
 app.use("/api/v1/public/certificates", require("./src/routes/publicCertificate.routes"));
-app.use("/api/v1/public/identities", conditionalApiLimiter, require("./src/routes/publicIdentity.routes"));
 
 // 🔐 All routes below this line require authentication
 app.use(verifyJWT);
@@ -178,6 +177,7 @@ app.use("/api/v1/hr", requireTenantUser, hrRoutes);
 app.use("/api/v1/settings", requireTenantUser, settingsRoutes);
 // app.use("/api/v1/finance", requireTenantUser, financeRoutes); // DEPRECATED: Unused and insecure (use /income and /expenses directly)
 app.use("/api/v1/certificates", requireTenantUser, certificateRoutes);
+app.use("/api/v1/identities", requireTenantUser, require("./src/routes/identity.routes"));
 app.use("/api/v1/fees", requireTenantUser, feesRoutes);
 app.use("/api/v1/income", requireTenantUser, incomeRoutes);
 app.use("/api/v1/expenses", requireTenantUser, expenseRoutes);
