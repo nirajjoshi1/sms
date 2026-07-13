@@ -3,6 +3,7 @@ import { CreditCard, Printer } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { buildQrImageMap } from '../../lib/qrCode';
 
 const GenerateStaffIDCard = () => {
   const [templates, setTemplates] = useState([]);
@@ -11,6 +12,11 @@ const GenerateStaffIDCard = () => {
   const [selectedStaff, setSelectedStaff] = useState([]);
   const [previewData, setPreviewData] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [qrImages, setQrImages] = useState({});
+
+  useEffect(() => {
+    buildQrImageMap(previewData?.staffMembers).then(setQrImages).catch(() => setQrImages({}));
+  }, [previewData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +54,12 @@ const GenerateStaffIDCard = () => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!previewData) return;
+
+    const printableQrImages = Object.keys(qrImages).length
+      ? qrImages
+      : await buildQrImageMap(previewData.staffMembers);
 
     const cardsHtml = previewData.staffMembers.map(member => `
       <div class="id-card">
@@ -66,6 +76,7 @@ const GenerateStaffIDCard = () => {
             <p><strong>Staff ID:</strong> ${member.staffId || 'N/A'}</p>
             <p><strong>Email:</strong> ${member.email || 'N/A'}</p>
           </div>
+          ${printableQrImages[member.id] ? `<div class="qr-wrap"><img src="${printableQrImages[member.id]}" alt="Staff verification QR"/><span>SCAN TO VERIFY</span></div>` : ''}
         </div>
         <div class="card-footer">
           ${previewData.template.footerText || 'STAFF ID CARD'}
@@ -149,6 +160,9 @@ const GenerateStaffIDCard = () => {
             .details p {
               margin: 2px 0;
             }
+            .qr-wrap { margin-left: auto; text-align: center; width: 58px; flex: 0 0 58px; }
+            .qr-wrap img { display: block; width: 58px; height: 58px; }
+            .qr-wrap span { display: block; margin-top: 2px; font-size: 6px; font-weight: 800; color: #475569; }
             .card-footer {
               text-align: center;
               border-top: 1px solid #e5e7eb;
@@ -278,6 +292,12 @@ const GenerateStaffIDCard = () => {
                         <p className="text-muted-foreground">Staff ID: {member.staffId || 'N/A'}</p>
                         <p className="text-muted-foreground">Email: {member.email || 'N/A'}</p>
                       </div>
+                      {qrImages[member.id] && (
+                        <div className="ml-auto text-center shrink-0">
+                          <img src={qrImages[member.id]} alt={`Verify ${member.firstName}`} className="w-14 h-14 rounded bg-white" />
+                          <span className="text-[6px] font-black text-muted-foreground">SCAN TO VERIFY</span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-center border-t border-border pt-1 text-[8px] font-bold text-muted-foreground uppercase">
                       {previewData.template.footerText || 'STAFF ID CARD'}
