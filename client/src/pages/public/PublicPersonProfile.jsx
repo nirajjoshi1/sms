@@ -40,9 +40,13 @@ const PublicPersonProfile = () => {
 
   useEffect(() => {
     let active = true;
-    api.get(`/public/identities/${token}`)
+    api.get(`/identities/${token}`)
       .then(response => active && setData(response.data.data))
-      .catch(err => active && setError(err.response?.data?.message || 'This QR code could not be verified.'))
+      .catch(err => active && setError(
+        err.response?.status === 401
+          ? 'Please sign in with an authorized school account to view this complete record.'
+          : (err.response?.data?.message || 'This QR code could not be verified.')
+      ))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [token]);
