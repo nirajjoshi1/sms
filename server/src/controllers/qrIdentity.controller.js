@@ -70,9 +70,10 @@ const getSchool = (schoolId) => prisma.school.findUnique({
     }
 });
 
-exports.getPublicIdentity = asyncHandler(async (req, res) => {
+exports.getIdentity = asyncHandler(async (req, res) => {
     const identity = await prisma.qrIdentity.findUnique({ where: { token: req.params.token } });
     if (!identity || !identity.isActive) throw new ApiError(404, 'This QR identity is invalid or has been revoked');
+    if (identity.schoolId !== req.user.schoolId) throw new ApiError(403, 'You cannot view identity records from another school');
 
     const school = await getSchool(identity.schoolId);
     if (!school?.isActive) throw new ApiError(404, 'This school profile is not currently active');
