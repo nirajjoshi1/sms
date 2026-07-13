@@ -74,6 +74,7 @@ import GenerateIDCard from '../pages/certificates/GenerateIDCard';
 import StaffIDCard from '../pages/certificates/StaffIDCard';
 import GenerateStaffIDCard from '../pages/certificates/GenerateStaffIDCard';
 import PublicVerifyCertificate from '../pages/public/PublicVerifyCertificate';
+import PublicPersonProfile from '../pages/public/PublicPersonProfile';
 
 // CMS imports
 import Events from '../pages/cms/Events';
@@ -137,6 +138,7 @@ const AppRoutes = () => {
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/verify/certificate/:certificateNumber" element={<PublicVerifyCertificate />} />
       <Route path="/verify/certificate" element={<PublicVerifyCertificate />} />
+      <Route path="/verify/person/:token" element={<PublicPersonProfile />} />
 
       {/* Protected routes - authenticated users go to dashboard at / */}
       <Route

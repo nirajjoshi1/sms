@@ -1056,6 +1056,25 @@ model StudentHistory {
   School            School?         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
+/// Revocable public identity used by QR-enabled ID cards. The token is random
+/// and contains no personal information; scanning it resolves current data.
+model QrIdentity {
+  id            String    @id @default(uuid())
+  token         String    @unique
+  personType    String
+  personId      String
+  schoolId      String
+  isActive      Boolean   @default(true)
+  scanCount     Int       @default(0)
+  lastScannedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([schoolId, personType, personId])
+  @@index([personType, personId])
+  @@index([schoolId])
+}
+
 model IssuedCertificate {
   id                 String   @id @default(uuid())
   certificateNumber  String   @unique

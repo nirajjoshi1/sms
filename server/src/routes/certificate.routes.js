@@ -3,6 +3,7 @@ const router = express.Router();
 const certificateController = require('../controllers/certificate.controller');
 const { verifyJWT, requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
 const { PERMISSIONS } = require('../config/permissions');
+const qrIdentityController = require('../controllers/qrIdentity.controller');
 
 // All routes require authentication and school context
 router.use(verifyJWT);
@@ -26,5 +27,7 @@ router.route('/transfer-certificate')
 // ID Card Generation routes
 router.post('/generate-student-id', certificateController.generateStudentIdCard);
 router.post('/generate-staff-id', certificateController.generateStaffIdCard);
+router.post('/qr-identities/rotate', requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), qrIdentityController.rotateIdentity);
+router.delete('/qr-identities/:id', requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), qrIdentityController.revokeIdentity);
 
 module.exports = router;
