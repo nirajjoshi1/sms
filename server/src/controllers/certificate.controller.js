@@ -70,12 +70,24 @@ exports.deleteIdCardTemplate = asyncHandler(async (req, res) => {
 exports.generateStudentIdCard = asyncHandler(async (req, res) => {
     const { templateId, studentIds } = req.body;
 
-    if (!templateId || !studentIds || studentIds.length === 0) {
-        throw new ApiError(400, "Template ID and Student IDs are required");
+    if (!studentIds || studentIds.length === 0) {
+        throw new ApiError(400, "At least one Student ID is required");
     }
 
-    const [template, students] = await Promise.all([
-        prisma.idCardTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
+    const builtInTemplate = {
+        id: 'modern-navy',
+        title: 'Modern Navy Vertical',
+        schoolName: 'School ID Card',
+        schoolAddress: '',
+        headerColor: '#082b4c',
+        templateFor: 'STUDENT',
+        designType: 'Vertical'
+    };
+
+    const [storedTemplate, students, generalSetting, school] = await Promise.all([
+        templateId && templateId !== builtInTemplate.id
+            ? prisma.idCardTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } })
+            : Promise.resolve(builtInTemplate),
         prisma.student.findMany({
             where: {
                 id: { in: studentIds },
@@ -87,12 +99,24 @@ exports.generateStudentIdCard = asyncHandler(async (req, res) => {
                 Section: { select: { name: true } },
                 House: { select: { name: true } }
             }
-        })
+        }),
+        prisma.generalSetting.findFirst({ where: { schoolId: req.user.schoolId } }),
+        prisma.school.findUnique({ where: { id: req.user.schoolId } })
     ]);
 
-    if (!template) {
+    if (!storedTemplate) {
         throw new ApiError(404, "ID card template not found");
     }
+
+    const template = {
+        ...storedTemplate,
+        schoolName: generalSetting?.schoolName || storedTemplate.schoolName || school?.name || 'School Name',
+        schoolAddress: generalSetting?.address || storedTemplate.schoolAddress || school?.address || '',
+        logo: generalSetting?.logo || storedTemplate.logo || school?.logo || null,
+        phone: generalSetting?.phone || school?.phone || '',
+        email: generalSetting?.email || school?.email || '',
+        website: generalSetting?.website || ''
+    };
 
     const studentsWithQr = await Promise.all(students.map(async student => ({
         ...student,
