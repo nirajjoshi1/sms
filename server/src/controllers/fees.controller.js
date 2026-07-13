@@ -437,9 +437,11 @@ exports.collectFee = asyncHandler(async (req, res) => {
     try {
         const { createNotification } = require('../utils/notification');
         await createNotification({
-            title: "Fee Payment Collected",
+            title: "Fee Payment Receipt",
             message: `A fee payment of ${payment.netAmount} has been collected for student ${payment.Student?.firstName} ${payment.Student?.lastName || ''} (Admission No: ${payment.Student?.admissionNo}) via ${payment.paymentMethod}.`,
-            type: "fee"
+            type: "fee",
+            targetEmail: payment.Student?.email || undefined,
+            skipInApp: true // Don't broadcast this to all staff members
         });
     } catch (err) {
         console.error("Failed to trigger fee payment notification:", err);

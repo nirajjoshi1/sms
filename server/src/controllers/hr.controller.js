@@ -213,8 +213,27 @@ exports.generatePayroll = asyncHandler(async (req, res) => {
     const { staffId, month, year, netSalary } = req.body;
     
     const payroll = await prisma.payroll.create({
-        data: { schoolId: req.user.schoolId, staffId, month, year: parseInt(year), netSalary }
+        data: { schoolId: req.user.schoolId, staffId, month, year: parseInt(year), netSalary },
+        include: { Staff: { include: { User: true } } }
     });
+    
+    // Trigger notification
+    try {
+        const { createNotification } = require('../utils/notification');
+        const staffUser = payroll.Staff?.User;
+        const targetEmail = payroll.Staff?.email;
+
+        await createNotification({
+            title: "Payroll Generated",
+            message: `Your payroll for ${month} ${year} has been generated. Net Salary: ${netSalary}`,
+            type: "info",
+            userId: staffUser ? staffUser.id : undefined,
+            targetEmail: targetEmail || undefined,
+            skipInApp: !staffUser // Skip in-app if they have no user account
+        });
+    } catch (err) {
+        console.error("Failed to trigger payroll notification:", err);
+    }
     
     res.status(201).json(new ApiResponse(201, payroll, "Payroll generated successfully"));
 });
@@ -316,7 +335,7 @@ exports.updateLeaveStatus = asyncHandler(async (req, res) => {
         where: { id },
         data: { status, note },
         include: {
-            Staff: { select: { firstName: true, lastName: true } },
+            Staff: { select: { firstName: true, lastName: true, email: true, User: true } },
             LeaveType: { select: { name: true } }
         }
     });
@@ -324,10 +343,15 @@ exports.updateLeaveStatus = asyncHandler(async (req, res) => {
     // Trigger notification
     try {
         const { createNotification } = require('../utils/notification');
+        const staffUser = leave.Staff?.User;
+        
         await createNotification({
             title: `Leave Application ${status}`,
-            message: `Leave request for ${leave.Staff?.firstName} ${leave.Staff?.lastName || ''} has been ${status.toLowerCase()} by Admin.`,
-            type: "leave"
+            message: `Your leave request from ${new Date(leave.fromDate).toLocaleDateString()} to ${new Date(leave.toDate).toLocaleDateString()} has been ${status.toLowerCase()} by Admin.`,
+            type: "leave",
+            userId: staffUser ? staffUser.id : undefined,
+            targetEmail: leave.Staff?.email || undefined,
+            skipInApp: !staffUser
         });
     } catch (err) {
         console.error("Failed to trigger leave status notification:", err);

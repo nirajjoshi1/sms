@@ -216,10 +216,42 @@ exports.admitStudent = asyncHandler(async (req, res) => {
     // Trigger notification
     try {
         const { createNotification } = require('../utils/notification');
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #007bff; color: white; padding: 20px; text-align: center;">
+                    <h2 style="margin: 0;">Welcome to ${req.user.schoolName || 'Our School'}!</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="font-size: 16px; color: #333;">Dear ${guardianName},</p>
+                    <p style="font-size: 16px; color: #555;">We are thrilled to welcome <strong>${firstName} ${lastName || ''}</strong> to our institution!</p>
+                    
+                    <h3 style="color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 5px;">Student Details</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <tr><td style="padding: 8px 0; color: #555;"><strong>Admission No:</strong></td><td style="padding: 8px 0; color: #333;">${admissionNo}</td></tr>
+                        <tr><td style="padding: 8px 0; color: #555;"><strong>Class:</strong></td><td style="padding: 8px 0; color: #333;">${student.Class?.name}</td></tr>
+                        <tr><td style="padding: 8px 0; color: #555;"><strong>Section:</strong></td><td style="padding: 8px 0; color: #333;">${student.Section?.name}</td></tr>
+                        <tr><td style="padding: 8px 0; color: #555;"><strong>Date of Birth:</strong></td><td style="padding: 8px 0; color: #333;">${new Date(dob).toLocaleDateString()}</td></tr>
+                    </table>
+                    
+                    <h3 style="color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 5px;">Important Information</h3>
+                    <p style="color: #555; line-height: 1.5;">Please keep this email for your records. If you have any questions regarding fees, transportation, or schedules, please feel free to reach out to the administration office.</p>
+                    
+                    <div style="margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #007bff;">
+                        <p style="margin: 0; font-size: 14px; color: #555;"><strong>Note:</strong> Your assigned fee plan will be generated shortly. You will receive a separate notification when fees are due.</p>
+                    </div>
+                </div>
+                <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+                    &copy; ${new Date().getFullYear()} ${req.user.schoolName || 'School Management System'}. All rights reserved.
+                </div>
+            </div>
+        `;
+
         await createNotification({
             title: "New Student Admission",
             message: `Student ${firstName} ${lastName || ''} has been admitted to Class ${student.Class?.name} - Section ${student.Section?.name} (Admission No: ${admissionNo})`,
-            type: "admission"
+            type: "admission",
+            targetEmail: student.email || undefined, // Send an email if student has an email address
+            emailHtml
         });
     } catch (err) {
         console.error("Failed to trigger admission notification:", err);
