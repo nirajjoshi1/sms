@@ -2,6 +2,7 @@ const { ApiResponse } = require('../utils/ApiResponse');
 const { ApiError } = require('../utils/ApiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
+const { ensureQrIdentity, PERSON_TYPES } = require('../services/qrIdentity.service');
 
 // =====================================
 // ID Card Template Controllers
@@ -93,7 +94,16 @@ exports.generateStudentIdCard = asyncHandler(async (req, res) => {
         throw new ApiError(404, "ID card template not found");
     }
 
-    res.status(200).json(new ApiResponse(200, { template, students }, "Student ID card data prepared successfully"));
+    const studentsWithQr = await Promise.all(students.map(async student => ({
+        ...student,
+        qrIdentity: await ensureQrIdentity({
+            schoolId: req.user.schoolId,
+            personType: PERSON_TYPES.STUDENT,
+            personId: student.id
+        })
+    })));
+
+    res.status(200).json(new ApiResponse(200, { template, students: studentsWithQr }, "Student ID card data prepared successfully"));
 });
 
 exports.generateStaffIdCard = asyncHandler(async (req, res) => {
@@ -122,7 +132,16 @@ exports.generateStaffIdCard = asyncHandler(async (req, res) => {
         throw new ApiError(404, "ID card template not found");
     }
 
-    res.status(200).json(new ApiResponse(200, { template, staffMembers }, "Staff ID card data prepared successfully"));
+    const staffWithQr = await Promise.all(staffMembers.map(async member => ({
+        ...member,
+        qrIdentity: await ensureQrIdentity({
+            schoolId: req.user.schoolId,
+            personType: PERSON_TYPES.STAFF,
+            personId: member.id
+        })
+    })));
+
+    res.status(200).json(new ApiResponse(200, { template, staffMembers: staffWithQr }, "Staff ID card data prepared successfully"));
 });
 
 // =====================================
