@@ -29,6 +29,14 @@ router.post(
     studentController.admitStudent
 );
 
+// Bulk delete students
+router.post(
+    '/bulk-delete',
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE),
+    validate(studentValidation.bulkDeleteStudents),
+    studentController.bulkDeleteStudents
+);
+
 // Get student details by ID
 router.get('/:id', requirePermission(PERMISSIONS.STUDENTS_READ), studentController.getStudentDetails);
 
@@ -58,12 +66,6 @@ router.patch(
     studentController.toggleStudentStatus
 );
 
-// Bulk delete students
-router.post(
-    '/bulk-delete',
-    requirePermission(PERMISSIONS.SETTINGS_MANAGE),
-    validate(studentValidation.bulkDeleteStudents),
-    studentController.bulkDeleteStudents
-);
+// Moved to top
 
 module.exports = router;

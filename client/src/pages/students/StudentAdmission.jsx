@@ -280,16 +280,25 @@ const StudentAdmission = () => {
                 <p className="text-[9px] text-muted-foreground mt-2 text-center">Required</p>
               </div>
 
-              <div className="flex-1 grid grid-cols-1 gap-4">
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <p className="text-[11px] font-bold text-primary mb-1">Auto-Generated Admission Number</p>
-                  <p className="text-[10px] text-muted-foreground">The admission number will be automatically assigned based on the last student's number.</p>
-                </div>
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
-                  label="Enroll Number (Optional)"
-                  value={formData.enrollNumber}
-                  onChange={(v) => setFormData({...formData, enrollNumber: v})}
-                  placeholder="Government enrollment number"
+                  label="First Name *"
+                  value={formData.firstName}
+                  onChange={(v) => setFormData({...formData, firstName: v})}
+                  required
+                  mode="alpha"
+                />
+                <Input
+                  label="Middle Name"
+                  value={formData.middleName}
+                  onChange={(v) => setFormData({...formData, middleName: v})}
+                  mode="alpha"
+                />
+                <Input
+                  label="Last Name"
+                  value={formData.lastName}
+                  onChange={(v) => setFormData({...formData, lastName: v})}
+                  mode="alpha"
                 />
               </div>
             </div>
@@ -326,25 +335,7 @@ const StudentAdmission = () => {
                 />
               </div>
 
-              <Input
-                label="First Name *"
-                value={formData.firstName}
-                onChange={(v) => setFormData({...formData, firstName: v})}
-                required
-                mode="alpha"
-              />
-              <Input
-                label="Middle Name"
-                value={formData.middleName}
-                onChange={(v) => setFormData({...formData, middleName: v})}
-                mode="alpha"
-              />
-              <Input
-                label="Last Name"
-                value={formData.lastName}
-                onChange={(v) => setFormData({...formData, lastName: v})}
-                mode="alpha"
-              />
+
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Gender *</label>

@@ -55,7 +55,7 @@ export const NAVIGATION_ITEMS = [
       { label: 'Student Details', to: '/students' },
       { label: 'Student Admission', to: '/students/admission' },
       { label: 'Disabled Students', to: '/students/disabled' },
-      { label: 'Bulk Delete', to: '/students/bulk-delete' },
+
       { label: 'Student Categories', to: '/students/category' },
       { label: 'Student House', to: '/students/house' },
       { label: 'Disable Reason', to: '/students/disable-reason' },

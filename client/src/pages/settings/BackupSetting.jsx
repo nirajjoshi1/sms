@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Download, Database, Trash2, Calendar, FileArchive } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const BackupSetting = () => {
+  const confirm = useConfirm();
+
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -25,7 +28,7 @@ const BackupSetting = () => {
   }, []);
 
   const handleCreateBackup = async () => {
-    if (!window.confirm('Are you sure you want to create a database backup?')) return;
+    if (!await confirm('Are you sure you want to create a database backup?')) return;
 
     try {
       setCreating(true);
@@ -60,7 +63,7 @@ const BackupSetting = () => {
   };
 
   const handleDeleteBackup = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this backup?')) return;
+    if (!await confirm('Are you sure you want to delete this backup?')) return;
 
     try {
       await api.delete(`/settings/backups/${id}`);

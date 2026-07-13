@@ -3,9 +3,12 @@ import { Plus, Edit2, Trash2, Award, Search } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const StudentCertificate = () => {
+  const confirm = useConfirm();
+
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -81,7 +84,7 @@ const StudentCertificate = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this certificate template?')) return;
+    if (!await confirm('Are you sure you want to delete this certificate template?')) return;
 
     try {
       await api.delete(`/certificates/templates/${id}`);

@@ -9,10 +9,10 @@ const errorHandler = (err, req, res, next) => {
 
     // Map Zod Validation Errors
     if (err.name === 'ZodError') {
-        const errors = err.errors.map(e => ({
-            field: e.path.join('.'),
+        const errors = Array.isArray(err.errors) ? err.errors.map(e => ({
+            field: e.path ? e.path.join('.') : 'unknown',
             message: e.message
-        }));
+        })) : [];
         error = new ApiError(400, "Validation Error", errors, err.stack);
     }
     // Map Prisma Client Errors

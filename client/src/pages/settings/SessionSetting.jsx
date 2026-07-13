@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const SessionSetting = () => {
+  const confirm = useConfirm();
+
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -82,7 +85,7 @@ const SessionSetting = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this session?')) return;
+    if (!await confirm('Are you sure you want to delete this session?')) return;
 
     try {
       await api.delete(`/settings/sessions/${id}`);

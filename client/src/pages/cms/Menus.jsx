@@ -3,9 +3,12 @@ import { Plus, Edit2, Trash2, Menu, Search, List } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const Menus = () => {
+  const confirm = useConfirm();
+
   const [menus, setMenus] = useState([]);
   const [allMenus, setAllMenus] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -98,7 +101,7 @@ const Menus = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this menu item?')) return;
+    if (!await confirm('Are you sure you want to delete this menu item?')) return;
 
     try {
       await api.delete(`/cms/menus/${id}`);

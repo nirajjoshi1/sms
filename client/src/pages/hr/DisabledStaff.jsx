@@ -3,8 +3,11 @@ import { UserX, Search, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-reac
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const DisabledStaff = () => {
+  const confirm = useConfirm();
+
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +31,7 @@ const DisabledStaff = () => {
   }, []);
 
   const handleEnable = async (id) => {
-    if (!window.confirm('Are you sure you want to enable this staff member?')) return;
+    if (!await confirm('Are you sure you want to enable this staff member?')) return;
 
     try {
       await api.patch(`/hr/staff/${id}/toggle-status`, {

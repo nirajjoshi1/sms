@@ -3,8 +3,11 @@ import { Plus, Search, Edit2, Trash2, BookOpen, Check, ChevronLeft, ChevronRight
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const Subjects = () => {
+  const confirm = useConfirm();
+
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -20,7 +23,7 @@ const Subjects = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const subjectTypes = ['Theory', 'Practical', 'Optional', 'Compulsory'];
+  const subjectTypes = ['Theory', 'Practical', 'Theory + Practical', 'Optional', 'Compulsory'];
 
   const fetchSubjects = async () => {
     try {
@@ -77,7 +80,7 @@ const Subjects = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this subject? This may affect timetables.')) return;
+    if (!await confirm('Are you sure you want to delete this subject? This may affect timetables.')) return;
     try {
       await api.delete(`/academics/subjects/${id}`);
       toast.success('Subject deleted');

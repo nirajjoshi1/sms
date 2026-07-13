@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const hrController = require('../controllers/hr.controller');
-const { requirePermission, requireSchoolContext } = require('../middleware/auth.middleware');
+const { requirePermission, requireSchoolContext, authorizeRoles } = require('../middleware/auth.middleware');
 const { PERMISSIONS } = require('../config/permissions');
 const { validate } = require('../middleware/validate.middleware');
 const staffValidation = require('../validations/staff.validation');

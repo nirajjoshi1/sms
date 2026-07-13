@@ -63,10 +63,11 @@ const Login = () => {
                 width: 60, height: 60, borderRadius: '16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 marginBottom: 16,
-                boxShadow: '0 0 20px rgba(99,102,241,0.25)'
+                boxShadow: '0 0 20px rgba(99,102,241,0.25)',
+                overflow: 'hidden'
               }}
             >
-              <GraduationCap style={{ width: 28, height: 28, color: '#a78bfa' }} />
+              <img src="/logo.jpg" alt="Gradex Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <h1 className="heading-display text-3xl text-white">Gradex SMS</h1>
             <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 300, fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>

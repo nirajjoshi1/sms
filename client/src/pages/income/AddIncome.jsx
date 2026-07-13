@@ -73,8 +73,15 @@ const AddIncome = () => {
       } else {
         await api.post('/income', payload);
         toast.success('Income created successfully');
+        setFormData({
+          name: '',
+          incomeHeadId: '',
+          invoiceNumber: '',
+          date: new Date().toISOString().split('T')[0],
+          amount: '',
+          description: ''
+        });
       }
-      navigate('/income/search');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to save income'));
     } finally {

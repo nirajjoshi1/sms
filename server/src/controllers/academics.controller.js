@@ -148,6 +148,13 @@ exports.getSubjects = asyncHandler(async (req, res) => {
 
 exports.createSubject = asyncHandler(async (req, res) => {
     const { name, type, code } = req.body;
+
+    const existingSubject = await prisma.subject.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' } }
+    });
+    if (existingSubject) {
+        throw new ApiError(409, "A subject with this name already exists");
+    }
     const subject = await prisma.subject.create({
         data: { schoolId: req.user.schoolId, name, type, code }
     });
@@ -157,6 +164,13 @@ exports.createSubject = asyncHandler(async (req, res) => {
 exports.updateSubject = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, type, code } = req.body;
+
+    const existingSubject = await prisma.subject.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' } }
+    });
+    if (existingSubject && existingSubject.id !== id) {
+        throw new ApiError(409, "A subject with this name already exists");
+    }
 
     const subject = await prisma.subject.update({
         where: { id },

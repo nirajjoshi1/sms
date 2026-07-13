@@ -217,7 +217,7 @@ exports.getFeeMasters = asyncHandler(async (req, res) => {
 });
 
 exports.createFeeMaster = asyncHandler(async (req, res) => {
-    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId } = req.body;
+    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId } = req.body;
 
     const master = await prisma.feeMaster.create({
         data: { schoolId: req.user.schoolId,
@@ -227,11 +227,13 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
             percentage: percentage ? parseFloat(percentage) : null,
             fixAmount: fixAmount ? parseFloat(fixAmount) : null,
             feeGroupId,
-            feeTypeId
+            feeTypeId,
+            classId: classId || null
         },
         include: {
             FeeGroup: { select: { name: true } },
-            FeeType: { select: { name: true, code: true } }
+            FeeType: { select: { name: true, code: true } },
+            Class: { select: { name: true } }
         }
     });
     res.status(201).json(new ApiResponse(201, master, "Fee master created successfully"));
@@ -239,7 +241,7 @@ exports.createFeeMaster = asyncHandler(async (req, res) => {
 
 exports.updateFeeMaster = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId } = req.body;
+    const { dueDate, amount, fineType, percentage, fixAmount, feeGroupId, feeTypeId, classId } = req.body;
 
     const master = await prisma.feeMaster.update({
         where: { id },
@@ -250,11 +252,13 @@ exports.updateFeeMaster = asyncHandler(async (req, res) => {
             percentage: percentage ? parseFloat(percentage) : null,
             fixAmount: fixAmount ? parseFloat(fixAmount) : null,
             feeGroupId,
-            feeTypeId
+            feeTypeId,
+            classId: classId || null
         },
         include: {
             FeeGroup: { select: { name: true } },
-            FeeType: { select: { name: true, code: true } }
+            FeeType: { select: { name: true, code: true } },
+            Class: { select: { name: true } }
         }
     });
     res.status(200).json(new ApiResponse(200, master, "Fee master updated successfully"));
@@ -517,13 +521,28 @@ exports.getDueFees = asyncHandler(async (req, res) => {
 
         include: {
             FeeGroup: { select: { name: true } },
-            FeeType: { select: { name: true } }
+            FeeType: { select: { name: true } },
+            Class: { select: { name: true } }
         }
     });
 
     // Calculate due fees for each student
     const dueFeesData = students.map(student => {
-        const totalExpected = feeMasters.reduce((sum, master) => sum + Number(master.amount), 0);
+        const totalExpected = feeMasters.reduce((sum, master) => {
+            if (!master.classId || master.classId === student.classId) {
+                let amount = Number(master.amount);
+                // Calculate automatic fine if past due date
+                if (master.dueDate && new Date(master.dueDate) < new Date()) {
+                    if (master.fineType === 'Percentage') {
+                        amount += (amount * Number(master.percentage || 0)) / 100;
+                    } else if (master.fineType === 'FixAmount' || master.fineType === 'FixedAmount' || master.fineType === 'Fix') {
+                        amount += Number(master.fixAmount || 0);
+                    }
+                }
+                return sum + amount;
+            }
+            return sum;
+        }, 0);
         const totalPaid = student.FeePayment.reduce((sum, payment) => sum + Number(payment.netAmount), 0);
         const dueAmount = totalExpected - totalPaid;
 
@@ -532,6 +551,7 @@ exports.getDueFees = asyncHandler(async (req, res) => {
             admissionNo: student.admissionNo,
             firstName: student.firstName,
             lastName: student.lastName,
+            classId: student.classId,
             className: student.Class.name,
             sectionName: student.Section.name,
             totalExpected,

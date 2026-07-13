@@ -5,9 +5,12 @@ import { toast } from 'sonner';
 import ImageUpload from '../../components/common/ImageUpload';
 import CustomModal from '../../components/ui/CustomModal';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const Events = () => {
+  const confirm = useConfirm();
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -89,7 +92,7 @@ const Events = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    if (!await confirm('Are you sure you want to delete this event?')) return;
 
     try {
       await api.delete(`/cms/events/${id}`);

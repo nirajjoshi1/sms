@@ -3,8 +3,11 @@ import { Search, Filter, Plus, Edit2, Trash2, Users, ChevronLeft, ChevronRight, 
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const StaffList = () => {
+  const confirm = useConfirm();
+
   const navigate = useNavigate();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +77,7 @@ const StaffList = () => {
   }, [searchQuery, filters, pagination.page, pagination.limit]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+    if (!await confirm('Are you sure you want to delete this staff member?')) return;
 
     try {
       await api.delete(`/staff/${id}`);

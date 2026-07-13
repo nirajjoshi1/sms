@@ -3,8 +3,11 @@ import { ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const FeesCarryForward = () => {
+  const confirmDialog = useConfirm();
+
   const [sessions, setSessions] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +53,7 @@ const FeesCarryForward = () => {
       return toast.error('From and To sessions must be different');
     }
 
-    if (!confirm('Are you sure you want to carry forward unpaid fees? This action cannot be undone.')) {
+    if (!await confirmDialog('Are you sure you want to carry forward unpaid fees? This action cannot be undone.')) {
       return;
     }
 

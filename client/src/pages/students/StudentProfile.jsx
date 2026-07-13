@@ -19,8 +19,11 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const StudentProfile = () => {
+  const confirm = useConfirm();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
@@ -46,7 +49,7 @@ const StudentProfile = () => {
 
   const handleToggleStatus = async () => {
     const action = student.isDisabled ? 'enable' : 'disable';
-    if (!window.confirm(`Are you sure you want to ${action} this student?`)) return;
+    if (!await confirm(`Are you sure you want to ${action} this student?`)) return;
 
     try {
       setActionLoading(true);
@@ -64,7 +67,7 @@ const StudentProfile = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
+    if (!await confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
 
     try {
       setActionLoading(true);

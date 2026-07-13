@@ -4,9 +4,12 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import CustomModal from '../../components/ui/CustomModal';
+import { useConfirm } from '../../context/ConfirmContext';
 
 
 const FeesType = () => {
+  const confirmDialog = useConfirm();
+
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -84,7 +87,7 @@ const FeesType = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this fee type?')) return;
+    if (!await confirmDialog('Are you sure you want to delete this fee type?')) return;
 
     try {
       await api.delete(`/fees/types/${id}`);
