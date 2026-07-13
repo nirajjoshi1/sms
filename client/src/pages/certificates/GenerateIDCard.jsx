@@ -3,6 +3,7 @@ import { CreditCard, Printer, Users } from 'lucide-react';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
+import { buildQrImageMap } from '../../lib/qrCode';
 
 const GenerateIDCard = () => {
   const [templates, setTemplates] = useState([]);
@@ -11,6 +12,11 @@ const GenerateIDCard = () => {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [previewData, setPreviewData] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [qrImages, setQrImages] = useState({});
+
+  useEffect(() => {
+    buildQrImageMap(previewData?.students).then(setQrImages).catch(() => setQrImages({}));
+  }, [previewData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +54,12 @@ const GenerateIDCard = () => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!previewData) return;
+
+    const printableQrImages = Object.keys(qrImages).length
+      ? qrImages
+      : await buildQrImageMap(previewData.students);
 
     const cardsHtml = previewData.students.map(student => `
       <div class="id-card">
@@ -66,6 +76,7 @@ const GenerateIDCard = () => {
             <p><strong>Roll No:</strong> ${student.rollNumber || 'N/A'}</p>
             <p><strong>House:</strong> ${student.House?.name || 'N/A'}</p>
           </div>
+          ${printableQrImages[student.id] ? `<div class="qr-wrap"><img src="${printableQrImages[student.id]}" alt="Student verification QR"/><span>SCAN TO VERIFY</span></div>` : ''}
         </div>
         <div class="card-footer">
           ${previewData.template.footerText || 'STUDENT ID CARD'}
@@ -149,6 +160,9 @@ const GenerateIDCard = () => {
             .details p {
               margin: 2px 0;
             }
+            .qr-wrap { margin-left: auto; text-align: center; width: 58px; flex: 0 0 58px; }
+            .qr-wrap img { display: block; width: 58px; height: 58px; }
+            .qr-wrap span { display: block; margin-top: 2px; font-size: 6px; font-weight: 800; color: #475569; }
             .card-footer {
               text-align: center;
               border-top: 1px solid #e5e7eb;
@@ -283,6 +297,12 @@ const GenerateIDCard = () => {
                         <p className="text-muted-foreground">Roll No: {student.rollNumber || 'N/A'}</p>
                         <p className="text-muted-foreground">House: {student.House?.name || 'N/A'}</p>
                       </div>
+                      {qrImages[student.id] && (
+                        <div className="ml-auto text-center shrink-0">
+                          <img src={qrImages[student.id]} alt={`Verify ${student.firstName}`} className="w-14 h-14 rounded bg-white" />
+                          <span className="text-[6px] font-black text-muted-foreground">SCAN TO VERIFY</span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-center border-t border-border pt-1 text-[8px] font-bold text-muted-foreground uppercase">
                       {previewData.template.footerText || 'STUDENT ID CARD'}
