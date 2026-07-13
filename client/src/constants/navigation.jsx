@@ -133,9 +133,7 @@ export const NAVIGATION_ITEMS = [
     icon: <FileBadge />,
     roles: ["ADMIN"],
     items: [
-      { label: 'Student Certificate', to: '/certificates/student-certificate' },
-      { label: 'Generate Certificate', to: '/certificates/generate-certificate' },
-      { label: 'Transfer Certificate', to: '/certificates/transfer-certificate' },
+      { label: 'Transfer Certificate', to: '/certificates/generate-certificate' },
       { label: 'Student ID Card', to: '/certificates/student-id-card' },
       { label: 'Generate ID Card', to: '/certificates/generate-id-card' },
       { label: 'Staff ID Card', to: '/certificates/staff-id-card' },

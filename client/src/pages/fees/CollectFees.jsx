@@ -5,8 +5,10 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/errorHandler';
 import { useConfirm } from '../../context/ConfirmContext';
 import { printReceipt } from '../../lib/printReceipt';
+import { useLocation } from 'react-router-dom';
 
 const CollectFees = () => {
+  const location = useLocation();
   const [students, setStudents] = useState([]);
   const [feeGroups, setFeeGroups] = useState([]);
   const [feeTypes, setFeeTypes] = useState([]);
@@ -20,6 +22,7 @@ const CollectFees = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [selectedDiscountId, setSelectedDiscountId] = useState('');
+  const [studentPayments, setStudentPayments] = useState([]);
 
   const [formData, setFormData] = useState({
     feeGroupId: '',
@@ -57,6 +60,22 @@ const CollectFees = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (selectedStudent) {
+      const fetchStudentPayments = async () => {
+        try {
+          const res = await api.get(`/fees/payments?studentId=${selectedStudent.id}`);
+          setStudentPayments(res.data.data || []);
+        } catch (error) {
+          console.error("Failed to fetch student payments:", error);
+        }
+      };
+      fetchStudentPayments();
+    } else {
+      setStudentPayments([]);
+    }
+  }, [selectedStudent]);
 
   useEffect(() => {
     if (formData.feeGroupId && formData.feeTypeId && feeMasters.length > 0) {
@@ -111,13 +130,67 @@ const CollectFees = () => {
     setSelectedStudent(student);
     setSearchQuery(`${student.firstName} ${student.lastName} (${student.admissionNo})`);
     setShowResults(false);
+    setFormData(prev => ({
+      ...prev,
+      feeGroupId: '',
+      feeTypeId: '',
+      amount: '',
+      discount: '',
+      fine: ''
+    }));
   };
+
+  useEffect(() => {
+    if (location.state && location.state.student && students.length > 0) {
+      const student = students.find(s => s.id === location.state.student.id) || location.state.student;
+      handleStudentSelect(student);
+    }
+  }, [location.state, students]);
 
   const calculateTotal = () => {
     const amount = parseFloat(formData.amount) || 0;
     const discount = parseFloat(formData.discount) || 0;
     const fine = parseFloat(formData.fine) || 0;
     return (amount - discount + fine).toFixed(2);
+  };
+
+  const getFilteredFeeTypes = () => {
+    if (!selectedStudent) return feeTypes;
+    if (!formData.feeGroupId) return [];
+
+    return feeTypes.filter(type => {
+      const master = feeMasters.find(m => {
+        if (m.feeGroupId !== formData.feeGroupId || m.feeTypeId !== type.id) {
+          return false;
+        }
+        if (m.studentId) {
+          return m.studentId === selectedStudent.id;
+        } else if (m.sectionId) {
+          return m.sectionId === selectedStudent.sectionId;
+        } else if (m.classId) {
+          return m.classId === selectedStudent.classId;
+        } else {
+          return true; // Global fee master
+        }
+      });
+
+      if (!master) return false;
+
+      let expectedAmount = parseFloat(master.amount);
+      if (master.dueDate && new Date(master.dueDate) < new Date()) {
+        if (master.fineType === 'Percentage') {
+          expectedAmount += (parseFloat(master.amount) * parseFloat(master.percentage || 0)) / 100;
+        } else if (master.fineType === 'FixAmount' || master.fineType === 'FixedAmount') {
+          expectedAmount += parseFloat(master.fixAmount || 0);
+        }
+      }
+
+      const paidAmount = studentPayments
+        .filter(p => p.feeGroupId === formData.feeGroupId && p.feeTypeId === type.id)
+        .reduce((sum, p) => sum + parseFloat(p.netAmount), 0);
+
+      return (expectedAmount - paidAmount) > 0.01;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -141,10 +214,12 @@ const CollectFees = () => {
       });
       const receiptNumber = response.data.data?.receiptNumber;
       
-      const wantReceipt = await confirm(
-        'Fee collected successfully!',
-        `Receipt No: ${receiptNumber}. Do you want to print/download this receipt?`
-      );
+      const wantReceipt = await confirm({
+        title: 'Download / Print Receipt?',
+        description: `Fee collected successfully! Receipt No: ${receiptNumber}. Would you like to print or download the payment receipt?`,
+        confirmText: 'Download & Print',
+        cancelText: 'Close'
+      });
 
       if (wantReceipt) {
         printReceipt({
@@ -260,7 +335,7 @@ const CollectFees = () => {
                   required
                 >
                   <option value="">Select Fee Type</option>
-                  {feeTypes.map(t => (
+                  {getFilteredFeeTypes().map(t => (
                     <option key={t.id} value={t.id}>{t.name} ({t.code})</option>
                   ))}
                 </select>

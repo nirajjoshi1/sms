@@ -44,11 +44,12 @@ model CertificateTemplate {
   footerHeight     String?
   bodyHeight       String?
   bodyWidth        String?
-  studentPhoto     Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  schoolId         String?
-  School           School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentPhoto      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  schoolId          String?
+  School            School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  IssuedCertificate IssuedCertificate[]
 }
 
 model Class {
@@ -485,6 +486,7 @@ model School {
   AcademicSession     AcademicSession[]
   Category            Category[]
   CertificateTemplate CertificateTemplate[]
+  IssuedCertificate   IssuedCertificate[]
   Class               Class[]
   ClassTeacher        ClassTeacher[]
   CmsPage             CmsPage[]
@@ -659,6 +661,7 @@ model Student {
   HomeworkSubmission HomeworkSubmission[]
   ExamMark           ExamMark[]
   StudentHistory     StudentHistory[]
+  IssuedCertificate  IssuedCertificate[]
   schoolId           String?
   School             School?              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -1051,4 +1054,36 @@ model StudentHistory {
   Section           Section         @relation(fields: [sectionId], references: [id])
   AcademicSession   AcademicSession @relation(fields: [academicSessionId], references: [id])
   School            School?         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model IssuedCertificate {
+  id                 String   @id @default(uuid())
+  certificateNumber  String   @unique
+  studentId          String
+  Student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  templateId         String
+  Template           CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  status             String   @default("Draft") // "Draft" | "Issued" | "Cancelled" | "Reissued"
+  issueDate          DateTime @default(now())
+  nepaliDate         String?
+  dynamicFields      Json?    // Key-value overrides
+  qrCodeUrl          String?
+  isDuplicate        Boolean  @default(false)
+  cancellationReason String?
+  reissueReason      String?
+  schoolId           String?
+  School             School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  auditLogs          CertificateAuditLog[]
+}
+
+model CertificateAuditLog {
+  id                    String            @id @default(uuid())
+  issuedCertificateId   String
+  IssuedCertificate     IssuedCertificate @relation(fields: [issuedCertificateId], references: [id], onDelete: Cascade)
+  action                String            // "CREATED" | "ISSUED" | "CANCELLED" | "REISSUED"
+  reason                String?
+  performedBy           String            // User email
+  createdAt             DateTime          @default(now())
 }

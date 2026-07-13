@@ -13,7 +13,7 @@ const { sendEmail } = require('./mailer');
  * @param {boolean} [notificationData.skipInApp=false] - Optional: If true, only sends an email, skipping DB creation.
  * @param {string} [notificationData.emailHtml] - Optional: Custom HTML template for the email.
  */
-const createNotification = async ({ title, message, type = 'info', userId = null, targetEmail = null, skipInApp = false, emailHtml = null }) => {
+const createNotification = async ({ title, message, type = 'info', userId = null, targetEmail = null, skipInApp = false, emailHtml = null, attachments = null }) => {
     try {
         let notification = null;
         
@@ -30,7 +30,8 @@ const createNotification = async ({ title, message, type = 'info', userId = null
         }
 
         if (targetEmail) {
-            await sendEmail({
+            // Send email asynchronously in the background so it does not block the HTTP response
+            sendEmail({
                 to: targetEmail,
                 subject: title,
                 html: emailHtml || `<div style="font-family: sans-serif; padding: 20px;">
@@ -38,7 +39,10 @@ const createNotification = async ({ title, message, type = 'info', userId = null
                     <p>${message}</p>
                     <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
                     <p style="color: #666; font-size: 12px;">This is an automated message from the School Management System.</p>
-                </div>`
+                </div>`,
+                attachments
+            }).catch(err => {
+                console.error(`❌ Background email sending failed to ${targetEmail}:`, err);
             });
         }
 

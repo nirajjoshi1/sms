@@ -346,34 +346,17 @@ exports.changePassword = asyncHandler(async (req, res) => {
 // Helper for sending reset email (fallback to log in development)
 const sendResetEmail = async (email, token, schoolId) => {
     try {
-        const nodemailer = require('nodemailer');
-        
-        let settings = null;
-        if (schoolId) {
-            settings = await prisma.emailSetting.findFirst({
-                where: { schoolId }
-            });
-        }
-        
+        const { sendEmail } = require('../utils/mailer');
         const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
         
-        if (settings && settings.isEnabled && settings.smtpHost && settings.smtpPort && settings.smtpUsername && settings.smtpPassword && settings.fromEmail) {
-            const transporter = nodemailer.createTransport({
-                host: settings.smtpHost,
-                port: Number(settings.smtpPort),
-                secure: settings.smtpEncryption === 'ssl' || String(settings.smtpPort) === '465',
-                auth: {
-                    user: settings.smtpUsername,
-                    pass: settings.smtpPassword
-                }
-            });
-            await transporter.sendMail({
-                from: `"${settings.fromName || 'School Management System'}" <${settings.fromEmail}>`,
-                to: email,
-                subject: 'Reset Password - School Management System',
-                text: `You requested a password reset. Please click on the link below to reset your password:\n\n${resetLink}`,
-                html: `<p>You requested a password reset. Please click on the link below to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`
-            });
+        const info = await sendEmail({
+            to: email,
+            subject: 'Reset Password - School Management System',
+            html: `<p>You requested a password reset. Please click on the link below to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+            schoolId
+        });
+
+        if (info) {
             console.log(`[EMAIL] Sent reset password email to ${email}`);
         } else if (process.env.NODE_ENV !== 'production') {
             console.log(`\n========================================\n[DEV-EMAIL-LOG] Password reset request for ${email}\nToken: ${token}\nReset Link: ${resetLink}\n========================================\n`);
