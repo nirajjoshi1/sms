@@ -8,7 +8,10 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  MoreVertical,
+  CreditCard,
+  UserX
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
@@ -36,6 +39,7 @@ const StudentList = () => {
     limit: 10,
     total: 0
   });
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
@@ -96,7 +100,7 @@ const StudentList = () => {
   }, [searchQuery, filters, pagination.page, pagination.limit]);
 
   const handleDelete = async (id) => {
-    if (!await confirm('Are you sure you want to delete this student?')) return;
+    if (!await confirm('Are you sure you want to delete this student record? This action cannot be undone.')) return;
 
     try {
       await api.delete(`/students/${id}`);
@@ -104,6 +108,20 @@ const StudentList = () => {
       fetchStudents();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete student');
+    }
+  };
+
+  const handleDisableStudent = async (student) => {
+    if (!await confirm(`Are you sure you want to disable ${student.firstName} ${student.lastName}?`)) return;
+    try {
+      setLoading(true);
+      await api.patch(`/students/${student.id}/status`, { isDisabled: true });
+      toast.success('Student disabled successfully');
+      fetchStudents();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to disable student');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -320,33 +338,92 @@ const StudentList = () => {
                   <td className="px-4 py-3">
                     <span className="text-[10px] text-muted-foreground">{student.gender}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="px-4 py-3 text-right">
+                    <div className="relative inline-block text-left">
                       <button
-                        onClick={() => navigate(`/students/${student.id}`)}
-                        className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
-                        title="View Details"
+                        onClick={() => setActiveDropdown(activeDropdown === student.id ? null : student.id)}
+                        className="p-1.5 hover:bg-muted text-muted-foreground rounded-lg transition-all"
+                        title="Actions"
                       >
-                        <Eye className="w-3 h-3" />
+                        <MoreVertical className="w-4 h-4" />
                       </button>
-                      <RequirePermission permission={PERMISSIONS.STUDENTS_UPDATE}>
-                        <button
-                          onClick={() => navigate(`/students/edit/${student.id}`)}
-                          className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-md transition-all"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                      </RequirePermission>
-                      <RequirePermission permission={PERMISSIONS.STUDENTS_DISABLE}>
-                        <button
-                          onClick={() => handleDelete(student.id)}
-                          className="p-1.5 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-md transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </RequirePermission>
+                      
+                      {activeDropdown === student.id && (
+                        <>
+                          {/* Invisible click-away overlay */}
+                          <div 
+                            className="fixed inset-0 z-30" 
+                            onClick={() => setActiveDropdown(null)}
+                          />
+                          <div className="absolute right-0 mt-1 w-44 bg-card border border-border rounded-lg shadow-xl z-40 py-1 divide-y divide-border/50 text-left animate-in fade-in slide-in-from-top-1 duration-100">
+                            <div className="py-1">
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  navigate(`/students/${student.id}`);
+                                }}
+                                className="w-full px-3 py-2 text-[11px] text-foreground hover:bg-muted/50 flex items-center gap-2 transition-colors"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                                View Profile
+                              </button>
+                              <RequirePermission permission={PERMISSIONS.STUDENTS_UPDATE}>
+                                <button
+                                  onClick={() => {
+                                    setActiveDropdown(null);
+                                    navigate(`/students/edit/${student.id}`);
+                                  }}
+                                  className="w-full px-3 py-2 text-[11px] text-foreground hover:bg-muted/50 flex items-center gap-2 transition-colors"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                  Edit Profile
+                                </button>
+                              </RequirePermission>
+                            </div>
+                            
+                            <div className="py-1">
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  navigate('/fees/collect', { state: { student } });
+                                }}
+                                className="w-full px-3 py-2 text-[11px] text-primary hover:bg-primary/5 flex items-center gap-2 transition-colors font-bold"
+                              >
+                                <CreditCard className="w-3.5 h-3.5 text-primary" />
+                                Pay Fee
+                              </button>
+                            </div>
+
+                            <div className="py-1">
+                              <RequirePermission permission={PERMISSIONS.SETTINGS_MANAGE}>
+                                <button
+                                  onClick={() => {
+                                    setActiveDropdown(null);
+                                    handleDisableStudent(student);
+                                  }}
+                                  className="w-full px-3 py-2 text-[11px] text-amber-600 dark:text-amber-400 hover:bg-muted/50 flex items-center gap-2 transition-colors"
+                                >
+                                  <UserX className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                  Disable Student
+                                </button>
+                              </RequirePermission>
+                              
+                              <RequirePermission permission={PERMISSIONS.STUDENTS_DISABLE}>
+                                <button
+                                  onClick={() => {
+                                    setActiveDropdown(null);
+                                    handleDelete(student.id);
+                                  }}
+                                  className="w-full px-3 py-2 text-[11px] text-destructive hover:bg-muted/50 flex items-center gap-2 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                  Delete Student
+                                </button>
+                              </RequirePermission>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

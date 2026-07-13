@@ -214,7 +214,7 @@ exports.generatePayroll = asyncHandler(async (req, res) => {
     
     const payroll = await prisma.payroll.create({
         data: { schoolId: req.user.schoolId, staffId, month, year: parseInt(year), netSalary },
-        include: { Staff: { include: { User: true } } }
+        include: { Staff: { include: { User: true, Department: true, Designation: true } } }
     });
     
     // Trigger notification
@@ -223,12 +223,95 @@ exports.generatePayroll = asyncHandler(async (req, res) => {
         const staffUser = payroll.Staff?.User;
         const targetEmail = payroll.Staff?.email;
 
+        // Fetch school details for logo image and branding
+        const school = await prisma.school.findUnique({
+            where: { id: req.user.schoolId },
+            select: { logo: true, name: true }
+        });
+
+        const emailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; color: #1f2937;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 32px; text-align: center; color: #ffffff;">
+                        ${school?.logo ? `<img src="${school.logo}" alt="${school.name} Logo" style="max-height: 60px; margin-bottom: 16px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" />` : ''}
+                        <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Payslip Advice</div>
+                        <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.025em;">Salary Slip Generated</h1>
+                        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 15px;">Statement of Earnings for ${payroll.month} ${payroll.year}</p>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 32px;">
+                        <p style="font-size: 16px; line-height: 1.6; margin-top: 0; color: #374151;">
+                            Dear <strong>${payroll.Staff?.firstName} ${payroll.Staff?.lastName || ''}</strong>,
+                        </p>
+                        <p style="font-size: 15px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                            Your payroll advice for the month of <strong>${payroll.month} ${payroll.year}</strong> has been successfully processed. Here are your salary breakdown details:
+                        </p>
+
+                        <!-- Employee Info -->
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #1e3a8a; font-weight: 700; letter-spacing: 0.05em;">Employee Details</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b; font-weight: 500;">Staff ID:</td>
+                                    <td style="padding: 6px 0; font-weight: 600; color: #0f172a; text-align: right;">${payroll.Staff?.staffId || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b; font-weight: 500;">Department:</td>
+                                    <td style="padding: 6px 0; font-weight: 600; color: #0f172a; text-align: right;">${payroll.Staff?.Department?.name || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b; font-weight: 500;">Designation:</td>
+                                    <td style="padding: 6px 0; font-weight: 600; color: #0f172a; text-align: right;">${payroll.Staff?.Designation?.name || 'N/A'}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Financial Summary -->
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #1e3a8a; font-weight: 700; letter-spacing: 0.05em;">Salary Summary</h3>
+                        <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569;">Description</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #475569;">Amount</th>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td style="padding: 16px; color: #0f172a; font-weight: 500;">
+                                        Net Remuneration
+                                        <div style="font-size: 12px; color: #64748b; font-weight: normal; margin-top: 4px;">Transferable Net Salary</div>
+                                    </td>
+                                    <td style="padding: 16px; text-align: right; color: #10b981; font-weight: 700; font-size: 18px;">₹${Number(payroll.netSalary).toFixed(2)}</td>
+                                </tr>
+                                <tr style="background-color: #f8fafc; font-size: 14px;">
+                                    <td style="padding: 12px 16px; color: #64748b;">Status</td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #1e3a8a; font-weight: 600;">${payroll.status || 'Generated'}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Notice / Note -->
+                        <div style="margin-bottom: 24px; font-size: 13px; color: #475569; padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0; line-height: 1.5;">
+                            This is an electronically generated document. For questions regarding payroll calculations, allowances, or tax deductions, please reach out to the Human Resources or Accounts division.
+                        </div>
+
+                        <!-- Footer Note -->
+                        <div style="text-align: center; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                            <p style="margin: 0; font-size: 13px; color: #64748b;">If you need a physical payslip, you can print one from your employee portal.</p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8;">&copy; ${new Date().getFullYear()} ${school?.name || req.user.schoolName || 'School Management System'}. All rights reserved.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
         await createNotification({
             title: "Payroll Generated",
             message: `Your payroll for ${month} ${year} has been generated. Net Salary: ${netSalary}`,
             type: "info",
             userId: staffUser ? staffUser.id : undefined,
             targetEmail: targetEmail || undefined,
+            emailHtml,
             skipInApp: !staffUser // Skip in-app if they have no user account
         });
     } catch (err) {

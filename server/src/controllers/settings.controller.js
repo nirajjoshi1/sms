@@ -380,7 +380,10 @@ exports.testEmail = asyncHandler(async (req, res) => {
         auth: {
             user: settings.smtpUsername,
             pass: settings.smtpPassword
-        }
+        },
+        connectionTimeout: 10000, // 10 seconds timeout
+        greetingTimeout: 10000,
+        socketTimeout: 10000
     });
 
     await transporter.verify();

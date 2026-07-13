@@ -4,103 +4,6 @@ const { asyncHandler } = require('../utils/asyncHandler');
 const prisma = require('../config/prisma');
 
 // =====================================
-// Certificate Template Controllers
-// =====================================
-exports.getCertificateTemplates = asyncHandler(async (req, res) => {
-    const templates = await prisma.certificateTemplate.findMany({
-        where: { schoolId: req.user.schoolId },
-
-        orderBy: { name: 'asc' }
-    });
-    
-    // Map fields for frontend
-    const mappedTemplates = templates.map(t => ({
-        ...t,
-        headerText: t.headerCenterText,
-        footerText: t.footerCenterText
-    }));
-    
-    res.status(200).json(new ApiResponse(200, mappedTemplates, "Certificate templates fetched successfully"));
-});
-
-exports.getCertificateTemplateById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const template = await prisma.certificateTemplate.findFirst({
-        where: { id, schoolId: req.user.schoolId }
-    });
-
-    if (!template) {
-        throw new ApiError(404, "Certificate template not found");
-    }
-
-    const mappedTemplate = {
-        ...template,
-        headerText: template.headerCenterText,
-        footerText: template.footerCenterText
-    };
-
-    res.status(200).json(new ApiResponse(200, mappedTemplate, "Certificate template fetched successfully"));
-});
-
-exports.createCertificateTemplate = asyncHandler(async (req, res) => {
-    const { name, bodyText, headerText, footerText, schoolId } = req.body;
-    
-    const template = await prisma.certificateTemplate.create({
-        data: { schoolId: req.user.schoolId,
-            name,
-            bodyText,
-            headerCenterText: headerText,
-            footerCenterText: footerText,
-            schoolId
-        }
-    });
-    
-    const mappedTemplate = {
-        ...template,
-        headerText: template.headerCenterText,
-        footerText: template.footerCenterText
-    };
-    
-    res.status(201).json(new ApiResponse(201, mappedTemplate, "Certificate template created successfully"));
-});
-
-exports.updateCertificateTemplate = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { name, bodyText, headerText, footerText } = req.body;
-
-    const existing = await prisma.certificateTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
-    if (!existing) throw new ApiError(404, "Certificate template not found");
-
-    const template = await prisma.certificateTemplate.update({
-        where: { id },
-        data: {
-            name,
-            bodyText,
-            headerCenterText: headerText,
-            footerCenterText: footerText,
-        }
-    });
-
-    const mappedTemplate = {
-        ...template,
-        headerText: template.headerCenterText,
-        footerText: template.footerCenterText
-    };
-
-    res.status(200).json(new ApiResponse(200, mappedTemplate, "Certificate template updated successfully"));
-});
-
-exports.deleteCertificateTemplate = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    const existing = await prisma.certificateTemplate.findFirst({ where: { id, schoolId: req.user.schoolId } });
-    if (!existing) throw new ApiError(404, "Certificate template not found");
-
-    await prisma.certificateTemplate.delete({ where: { id } });
-    res.status(200).json(new ApiResponse(200, null, "Certificate template deleted successfully"));
-});
-
-// =====================================
 // ID Card Template Controllers
 // =====================================
 exports.getIdCardTemplates = asyncHandler(async (req, res) => {
@@ -158,64 +61,6 @@ exports.deleteIdCardTemplate = asyncHandler(async (req, res) => {
 
     await prisma.idCardTemplate.delete({ where: { id } });
     res.status(200).json(new ApiResponse(200, null, "ID card template deleted successfully"));
-});
-
-// =====================================
-// Certificate Generation Controllers
-// =====================================
-exports.generateCertificate = asyncHandler(async (req, res) => {
-    const { templateId, studentId } = req.body;
-
-    if (!templateId || !studentId) {
-        throw new ApiError(400, "Template ID and Student ID are required");
-    }
-
-    const [template, student] = await Promise.all([
-        prisma.certificateTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
-        prisma.student.findFirst({
-            where: { id: studentId, schoolId: req.user.schoolId },
-            include: {
-                Class: { select: { name: true } },
-                Section: { select: { name: true } }
-            }
-        })
-    ]);
-
-    if (!template) {
-        throw new ApiError(404, "Certificate template not found");
-    }
-
-    if (!student) {
-        throw new ApiError(404, "Student not found");
-    }
-
-    // Return template and student data for frontend PDF generation
-    res.status(200).json(new ApiResponse(200, { template, student }, "Certificate data prepared successfully"));
-});
-
-exports.generateBulkCertificates = asyncHandler(async (req, res) => {
-    const { templateId, studentIds } = req.body;
-
-    if (!templateId || !studentIds || studentIds.length === 0) {
-        throw new ApiError(400, "Template ID and Student IDs are required");
-    }
-
-    const [template, students] = await Promise.all([
-        prisma.certificateTemplate.findFirst({ where: { id: templateId, schoolId: req.user.schoolId } }),
-        prisma.student.findMany({
-            where: { id: { in: studentIds }, schoolId: req.user.schoolId },
-            include: {
-                Class: { select: { name: true } },
-                Section: { select: { name: true } }
-            }
-        })
-    ]);
-
-    if (!template) {
-        throw new ApiError(404, "Certificate template not found");
-    }
-
-    res.status(200).json(new ApiResponse(200, { template, students }, "Bulk certificate data prepared successfully"));
 });
 
 // =====================================
@@ -281,10 +126,32 @@ exports.generateStaffIdCard = asyncHandler(async (req, res) => {
 });
 
 // =====================================
-// Transfer Certificate Controller
+// Transfer Certificate Controllers
 // =====================================
+exports.getTransferCertificates = asyncHandler(async (req, res) => {
+    const certificates = await prisma.issuedCertificate.findMany({
+        where: {
+            schoolId: req.user.schoolId,
+            Template: {
+                name: "Transfer Certificate"
+            }
+        },
+        include: {
+            Student: {
+                include: {
+                    Class: { select: { name: true } },
+                    Section: { select: { name: true } }
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json(new ApiResponse(200, certificates, "Transfer certificates fetched successfully"));
+});
+
 exports.generateTransferCertificate = asyncHandler(async (req, res) => {
-    const { studentId, leavingDate, reason, remarks } = req.body;
+    const { studentId, leavingDate, emailToStudent } = req.body;
 
     if (!studentId || !leavingDate) {
         throw new ApiError(400, "Student ID and leaving date are required");
@@ -303,13 +170,149 @@ exports.generateTransferCertificate = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Student not found");
     }
 
+    // Find or create a template for Transfer Certificate so that we satisfy the foreign key constraint
+    let template = await prisma.certificateTemplate.findFirst({
+        where: { name: "Transfer Certificate", schoolId: req.user.schoolId }
+    });
+
+    if (!template) {
+        template = await prisma.certificateTemplate.create({
+            data: {
+                name: "Transfer Certificate",
+                bodyText: "Transfer Certificate",
+                schoolId: req.user.schoolId
+            }
+        });
+    }
+
+    // Generate unique TC certificate number
+    const year = new Date().getFullYear();
+    const count = await prisma.issuedCertificate.count({
+        where: { schoolId: req.user.schoolId }
+    });
+    const certificateNumber = `TC-${year}-${(count + 1).toString().padStart(5, '0')}`;
+
+    // Create the record in database to log the generation!
+    const issuedCert = await prisma.issuedCertificate.create({
+        data: {
+            certificateNumber,
+            studentId,
+            templateId: template.id,
+            status: 'Issued',
+            nepaliDate: '',
+            dynamicFields: {
+                leavingDate: new Date(leavingDate).toLocaleDateString()
+            },
+            schoolId: req.user.schoolId
+        }
+    });
+
     const tcData = {
+        id: issuedCert.id,
+        certificateNumber,
         student,
         leavingDate: new Date(leavingDate),
-        reason: reason || '',
-        remarks: remarks || '',
+        reason: '',
+        remarks: 'Good',
         issueDate: new Date()
     };
 
-    res.status(200).json(new ApiResponse(200, tcData, "Transfer certificate data prepared successfully"));
+    let emailSent = false;
+    let emailError = null;
+    let recipient = null;
+
+    if (emailToStudent) {
+        if (!student.email) {
+            emailError = "Student does not have a registered email address.";
+        } else {
+            try {
+                const school = await prisma.school.findFirst({ where: { id: req.user.schoolId } });
+                const { sendEmail } = require('../utils/mailer');
+                const { generateCertificatePDF } = require('../utils/pdfGenerator');
+
+                // Construct issuedCert schema for PDF renderer
+                const fullIssuedCert = {
+                    ...issuedCert,
+                    Template: {
+                        name: "Transfer Certificate",
+                        headerLeftText: "Affiliated to HSEB",
+                        footerLeftText: "Class Teacher",
+                        footerRightText: "Principal"
+                    },
+                    Student: student
+                };
+
+                const pdfBuffer = await generateCertificatePDF(fullIssuedCert, school);
+
+                await sendEmail({
+                    to: student.email,
+                    subject: `Transfer Certificate — ${student.firstName} ${student.lastName || ''}`,
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px; color: #334155;">
+                            <h2 style="color: #dc2626; margin-top: 0;">Academic Transfer Certificate</h2>
+                            <p>Dear ${student.firstName},</p>
+                            <p>Please find attached your official Transfer Certificate issued by <strong>${school?.name || 'School Management'}</strong>.</p>
+                            <br/>
+                            <p>Best regards,</p>
+                            <p><strong>Administration Department</strong><br/>${school?.name || ''}</p>
+                        </div>
+                    `,
+                    attachments: [
+                        {
+                            filename: `Transfer_Certificate_${student.firstName}_${student.lastName || ''}.pdf`,
+                            content: pdfBuffer
+                        }
+                    ],
+                    schoolId: req.user.schoolId
+                });
+
+                emailSent = true;
+                recipient = student.email;
+            } catch (err) {
+                console.error("Failed to email transfer certificate:", err);
+                emailError = "Failed to transmit email notification.";
+            }
+        }
+    }
+
+    res.status(200).json(new ApiResponse(200, {
+        ...tcData,
+        emailSent,
+        emailError,
+        recipient
+    }, "Transfer certificate prepared successfully"));
+});
+
+exports.verifyCertificate = asyncHandler(async (req, res) => {
+    const { certificateNumber } = req.params;
+
+    const cert = await prisma.issuedCertificate.findFirst({
+        where: { certificateNumber },
+        include: {
+            Student: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    admissionNo: true,
+                    rollNumber: true,
+                    dob: true,
+                    gender: true,
+                    Class: { select: { name: true } },
+                    Section: { select: { name: true } }
+                }
+            },
+            Template: {
+                select: {
+                    name: true,
+                    bodyText: true
+                }
+            }
+        }
+    });
+
+    if (!cert) {
+        throw new ApiError(404, "Certificate not found or invalid certificate number");
+    }
+
+    res.status(200).json(new ApiResponse(200, cert, "Certificate verified successfully"));
 });

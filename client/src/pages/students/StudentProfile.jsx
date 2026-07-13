@@ -21,6 +21,7 @@ import api from '../../lib/api';
 import { toast } from 'sonner';
 import { useConfirm } from '../../context/ConfirmContext';
 import DisableStudentModal from './DisableStudentModal';
+import { printReceipt } from '../../lib/printReceipt';
 
 const StudentProfile = () => {
   const confirm = useConfirm();
@@ -47,6 +48,106 @@ const StudentProfile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const [payments, setPayments] = useState([]);
+  const [feeMasters, setFeeMasters] = useState([]);
+  const [feeGroups, setFeeGroups] = useState([]);
+  const [feeTypes, setFeeTypes] = useState([]);
+  const [feesLoading, setFeesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchFeesData = async () => {
+      try {
+        setFeesLoading(true);
+        const [paymentsRes, mastersRes, groupsRes, typesRes] = await Promise.all([
+          api.get(`/fees/payments?studentId=${id}`),
+          api.get('/fees/masters'),
+          api.get('/fees/groups'),
+          api.get('/fees/types')
+        ]);
+        setPayments(paymentsRes.data.data || []);
+        setFeeMasters(mastersRes.data.data || []);
+        setFeeGroups(groupsRes.data.data || []);
+        setFeeTypes(typesRes.data.data || []);
+      } catch (err) {
+        console.error("Failed to load student fees details:", err);
+      } finally {
+        setFeesLoading(false);
+      }
+    };
+    if (student) {
+      fetchFeesData();
+    }
+  }, [id, student]);
+
+  const getDueBills = () => {
+    if (!student || feeMasters.length === 0) return [];
+
+    const dueList = [];
+    feeMasters.forEach(master => {
+      let applies = false;
+      if (master.studentId) {
+        applies = master.studentId === student.id;
+      } else if (master.sectionId) {
+        applies = master.sectionId === student.sectionId;
+      } else if (master.classId) {
+        applies = master.classId === student.classId;
+      } else {
+        applies = true; // Global fee
+      }
+
+      if (applies) {
+        let expectedAmount = parseFloat(master.amount);
+        let fineAmount = 0;
+        
+        if (master.dueDate && new Date(master.dueDate) < new Date()) {
+          if (master.fineType === 'Percentage') {
+            fineAmount = (parseFloat(master.amount) * parseFloat(master.percentage || 0)) / 100;
+          } else if (master.fineType === 'FixAmount' || master.fineType === 'FixedAmount' || master.fineType === 'Fix') {
+            fineAmount = parseFloat(master.fixAmount || 0);
+          }
+        }
+        
+        const totalExpected = expectedAmount + fineAmount;
+
+        const paidAmount = payments
+          .filter(p => p.feeGroupId === master.feeGroupId && p.feeTypeId === master.feeTypeId)
+          .reduce((sum, p) => sum + parseFloat(p.netAmount), 0);
+
+        const remainingDue = totalExpected - paidAmount;
+
+        if (remainingDue > 0.01) {
+          const group = feeGroups.find(g => g.id === master.feeGroupId);
+          const type = feeTypes.find(t => t.id === master.feeTypeId);
+          
+          dueList.push({
+            id: master.id,
+            groupName: group?.name || 'General',
+            typeName: type?.name || 'Fee',
+            dueDate: master.dueDate ? new Date(master.dueDate).toLocaleDateString() : 'N/A',
+            expected: totalExpected,
+            paid: paidAmount,
+            due: remainingDue
+          });
+        }
+      }
+    });
+
+    return dueList;
+  };
+
+  const handlePrintReceipt = (payment) => {
+    printReceipt({
+      studentName: `${student.firstName} ${student.lastName || ''}`,
+      admissionNo: student.admissionNo,
+      className: `${student.Class?.name || 'N/A'} - ${student.Section?.name || 'N/A'}`,
+      receiptNo: payment.receiptNumber || payment.receiptNo,
+      date: new Date(payment.paymentDate).toLocaleDateString(),
+      amount: Number(payment.netAmount).toFixed(2),
+      paymentMethod: payment.paymentMethod,
+      feeType: payment.FeeType?.name || 'School Fee'
+    });
   };
 
   const handleToggleStatus = async () => {
@@ -263,6 +364,115 @@ const StudentProfile = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Fees & Billing Statements */}
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-border bg-muted/10 flex justify-between items-center">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">Fees & Billing Statement</h3>
+          <Link
+            to="/fees/collect"
+            state={{ student }}
+            className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-[10px] font-bold hover:bg-primary/20 transition-all"
+          >
+            Collect Fees
+          </Link>
+        </div>
+        
+        {feesLoading ? (
+          <div className="p-8 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            {/* Due Bills */}
+            <div>
+              <h4 className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">Outstanding Dues</h4>
+              {getDueBills().length > 0 ? (
+                <div className="overflow-x-auto border border-border rounded-lg">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-muted/10 border-b border-border">
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Fee Type</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Due Date</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground text-right">Expected</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground text-right">Paid</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground text-right">Remaining Due</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {getDueBills().map(bill => (
+                        <tr key={bill.id} className="hover:bg-muted/5">
+                          <td className="px-4 py-2.5 font-semibold text-foreground">
+                            {bill.typeName} <span className="text-[10px] text-muted-foreground font-normal">({bill.groupName})</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{bill.dueDate}</td>
+                          <td className="px-4 py-2.5 text-right text-foreground">₹{bill.expected.toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400">₹{bill.paid.toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-destructive">₹{bill.due.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-medium flex items-center gap-2">
+                  <span className="text-lg">✓</span> All fees are fully paid up to date. No outstanding dues!
+                </div>
+              )}
+            </div>
+
+            {/* Payment History */}
+            <div>
+              <h4 className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">Receipts & Payment History</h4>
+              {payments.length > 0 ? (
+                <div className="overflow-x-auto border border-border rounded-lg">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-muted/10 border-b border-border">
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Receipt No</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Fee Type</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Payment Date</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground">Method</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground text-right">Amount Paid</th>
+                        <th className="px-4 py-2 font-bold text-muted-foreground text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {payments.map(p => (
+                        <tr key={p.id} className="hover:bg-muted/5">
+                          <td className="px-4 py-2.5 font-mono font-semibold text-foreground">{p.receiptNumber || p.receiptNo}</td>
+                          <td className="px-4 py-2.5 font-semibold text-foreground">
+                            {p.FeeType?.name || 'School Fee'} <span className="text-[10px] text-muted-foreground font-normal">({p.FeeGroup?.name || 'General'})</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{new Date(p.paymentDate).toLocaleDateString()}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground">
+                            {p.paymentMethod} {p.transactionId && <span className="text-[10px]">({p.transactionId})</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">₹{parseFloat(p.netAmount).toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right">
+                            <button
+                              onClick={() => handlePrintReceipt(p)}
+                              className="p-1 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded transition-all inline-flex items-center gap-1"
+                              title="Print Receipt"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span className="text-[10px] font-bold">Print</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-4 bg-muted/30 border border-border text-muted-foreground rounded-lg text-xs text-center">
+                  No payment transactions found for this student.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {student && (

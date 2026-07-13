@@ -50,17 +50,23 @@ exports.getStudents = asyncHandler(async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    // Split search query by whitespace to support searching first and last names together
+    const searchWords = search.trim().split(/\s+/).filter(Boolean);
+
     const where = {
         isDisabled: false,
         schoolId: req.user.schoolId,
-        ...(search && {
-            OR: [
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-                { admissionNo: { contains: search, mode: 'insensitive' } },
-                { rollNumber: { contains: search, mode: 'insensitive' } },
-                { enrollNumber: { contains: search, mode: 'insensitive' } }
-            ]
+        ...(searchWords.length > 0 && {
+            AND: searchWords.map(word => ({
+                OR: [
+                    { firstName: { contains: word, mode: 'insensitive' } },
+                    { middleName: { contains: word, mode: 'insensitive' } },
+                    { lastName: { contains: word, mode: 'insensitive' } },
+                    { admissionNo: { contains: word, mode: 'insensitive' } },
+                    { rollNumber: { contains: word, mode: 'insensitive' } },
+                    { enrollNumber: { contains: word, mode: 'insensitive' } }
+                ]
+            }))
         }),
         ...(classId && { classId }),
         ...(sectionId && { sectionId }),
@@ -97,15 +103,20 @@ exports.getDisabledStudents = asyncHandler(async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    const searchWords = search.trim().split(/\s+/).filter(Boolean);
+
     const where = {
         isDisabled: true,
         schoolId: req.user.schoolId,
-        ...(search && {
-            OR: [
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-                { admissionNo: { contains: search, mode: 'insensitive' } }
-            ]
+        ...(searchWords.length > 0 && {
+            AND: searchWords.map(word => ({
+                OR: [
+                    { firstName: { contains: word, mode: 'insensitive' } },
+                    { middleName: { contains: word, mode: 'insensitive' } },
+                    { lastName: { contains: word, mode: 'insensitive' } },
+                    { admissionNo: { contains: word, mode: 'insensitive' } }
+                ]
+            }))
         })
     };
 

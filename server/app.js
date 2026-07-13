@@ -160,6 +160,7 @@ app.use("/api/v1/auth/forgot-password", conditionalResetLimiter);
 app.use("/api/v1/auth/reset-password", conditionalResetLimiter);
 app.use("/api/v1/auth", conditionalAuthLimiter, authRoutes);
 app.use("/api/v1/school-requests", schoolRequestRoutes);
+app.use("/api/v1/public/certificates", require("./src/routes/publicCertificate.routes"));
 
 // 🔐 All routes below this line require authentication
 app.use(verifyJWT);

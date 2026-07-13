@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/popover"
 
 export function DatePicker({ value, onChange, placeholder = "Pick a date", className, required, disabled }) {
+  const [open, setOpen] = React.useState(false);
   // Value is expected to be a string like 'YYYY-MM-DD'
   // Adding T12:00:00 prevents timezone issues causing the date to shift back one day
   const date = value ? new Date(value + "T12:00:00") : undefined;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -32,7 +33,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
           {date ? format(date, "MMM dd, yyyy") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 flex flex-col" align="start">
         <Calendar
           mode="single"
           selected={date}
@@ -44,9 +45,25 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
             } else {
                if (onChange) onChange({ target: { value: '' } });
             }
+            setOpen(false);
           }}
           initialFocus
         />
+        <div className="w-full border-t border-border p-1.5 bg-muted/10 flex justify-center">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full h-7 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={() => {
+              const today = new Date();
+              const formatted = format(today, 'yyyy-MM-dd');
+              if (onChange) onChange({ target: { value: formatted } });
+              setOpen(false);
+            }}
+          >
+            Select Today
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   )

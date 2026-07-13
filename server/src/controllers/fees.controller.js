@@ -407,7 +407,7 @@ exports.collectFee = asyncHandler(async (req, res) => {
             include: {
                 Student: {
                     select: {
-                        firstName: true, lastName: true, admissionNo: true,
+                        firstName: true, lastName: true, admissionNo: true, email: true,
                         Class: { select: { name: true } }, Section: { select: { name: true } }
                     }
                 },
@@ -436,11 +436,148 @@ exports.collectFee = asyncHandler(async (req, res) => {
     // Trigger notification (outside transaction so it doesn't block)
     try {
         const { createNotification } = require('../utils/notification');
+        
+        // Fetch school details for logo image and branding
+        const school = await prisma.school.findUnique({
+            where: { id: req.user.schoolId },
+            select: { logo: true, name: true, phone: true, email: true }
+        });
+
+        const emailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; color: #1f2937;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px; text-align: center; color: #ffffff;">
+                        ${school?.logo ? `<img src="${school.logo}" alt="${school.name} Logo" style="max-height: 60px; margin-bottom: 16px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" />` : ''}
+                        <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Receipt</div>
+                        <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.025em;">Fee Payment Confirmed</h1>
+                        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 15px;">Thank you for your payment.</p>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 32px;">
+                        <!-- Receipt Meta -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 24px;">
+                            <div>
+                                <p style="margin: 0; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em;">Receipt No</p>
+                                <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 15px; font-weight: 600; color: #111827;">${payment.receiptNumber}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="margin: 0; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em;">Date Paid</p>
+                                <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #111827;">${new Date(payment.paymentDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                        </div>
+
+                        <!-- Student Info -->
+                        <div style="background-color: #f9fafb; border: 1px solid #f3f4f6; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #4f46e5; font-weight: 700; letter-spacing: 0.05em;">Student Details</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr>
+                                    <td style="padding: 4px 0; color: #6b7280;">Student Name:</td>
+                                    <td style="padding: 4px 0; font-weight: 600; color: #111827; text-align: right;">${payment.Student?.firstName} ${payment.Student?.lastName || ''}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; color: #6b7280;">Admission No:</td>
+                                    <td style="padding: 4px 0; font-weight: 600; color: #111827; text-align: right;">${payment.Student?.admissionNo}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; color: #6b7280;">Class / Section:</td>
+                                    <td style="padding: 4px 0; font-weight: 600; color: #111827; text-align: right;">${payment.Student?.Class?.name || 'N/A'} - ${payment.Student?.Section?.name || 'N/A'}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Payment Breakdown -->
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #4f46e5; font-weight: 700; letter-spacing: 0.05em;">Payment Breakdown</h3>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151;">Description</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #374151;">Amount</th>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #111827;">
+                                        <div style="font-weight: 600;">${payment.FeeType?.name || 'School Fee'}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">Group: ${payment.FeeGroup?.name || 'General'}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #111827; font-weight: 500;">₹${Number(payment.amount).toFixed(2)}</td>
+                                </tr>
+                                ${Number(payment.fineAmount) > 0 ? `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #dc2626;">Fine / Late Fee</td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #dc2626; font-weight: 500;">+₹${Number(payment.fineAmount).toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${Number(payment.discountAmount) > 0 ? `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #16a34a;">Discount Applied</td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #16a34a; font-weight: 500;">-₹${Number(payment.discountAmount).toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                <tr style="background-color: #f9fafb; font-size: 16px; font-weight: 700;">
+                                    <td style="padding: 16px; color: #111827;">Total Paid (${payment.paymentMethod})</td>
+                                    <td style="padding: 16px; text-align: right; color: #4f46e5;">₹${Number(payment.netAmount).toFixed(2)}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Remarks -->
+                        ${payment.remarks ? `
+                        <div style="margin-bottom: 24px; font-size: 14px; color: #4b5563; padding: 12px 16px; background-color: #f9fafb; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0;">
+                            <strong>Remarks:</strong> ${payment.remarks}
+                        </div>
+                        ` : ''}
+
+                        <!-- Action Button to download/print -->
+                        <div style="text-align: center; margin: 32px 0 24px 0;">
+                            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.15); transition: background-color 0.2s;">
+                                Download / Print Receipt
+                            </a>
+                        </div>
+
+                        <!-- Admin Details -->
+                        <div style="background-color: #f9fafb; border-radius: 12px; padding: 16px; border: 1px solid #f3f4f6; margin-bottom: 24px; font-size: 13px; color: #4b5563;">
+                            <p style="margin: 0; font-weight: 600; color: #111827; margin-bottom: 4px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Authorized Signatory / Admin</p>
+                            <p style="margin: 0;">Processed by: <strong>${req.user.firstName} ${req.user.lastName || ''}</strong> (${req.user.email})</p>
+                        </div>
+
+                        <!-- Footer Note -->
+                        <div style="text-align: center; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 24px;">
+                            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #374151;">${school?.name || req.user.schoolName || 'School Management'}</p>
+                            ${school?.phone || school?.email ? `
+                            <p style="margin: 0 0 12px 0; font-size: 12px; color: #6b7280;">
+                                ${school?.phone ? `📞 Phone: ${school.phone}` : ''} 
+                                ${school?.phone && school?.email ? ' | ' : ''} 
+                                ${school?.email ? `✉️ Email: ${school.email}` : ''}
+                            </p>
+                            ` : ''}
+                            <p style="margin: 0; font-size: 11px; color: #9ca3af;">&copy; ${new Date().getFullYear()} ${school?.name || req.user.schoolName || 'School Management System'}. All rights reserved.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let attachments = [];
+        try {
+            const { generateFeeReceiptPDF } = require('../utils/pdfGenerator');
+            const pdfBuffer = await generateFeeReceiptPDF(payment, school, req.user);
+            attachments.push({
+                filename: `Receipt-${payment.receiptNumber || 'Payment'}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            });
+        } catch (pdfErr) {
+            console.error("❌ Failed to generate PDF receipt attachment:", pdfErr);
+        }
+
         await createNotification({
             title: "Fee Payment Receipt",
             message: `A fee payment of ${payment.netAmount} has been collected for student ${payment.Student?.firstName} ${payment.Student?.lastName || ''} (Admission No: ${payment.Student?.admissionNo}) via ${payment.paymentMethod}.`,
             type: "fee",
             targetEmail: payment.Student?.email || undefined,
+            emailHtml,
+            attachments: attachments.length > 0 ? attachments : undefined,
             skipInApp: true // Don't broadcast this to all staff members
         });
     } catch (err) {
@@ -468,10 +605,177 @@ exports.sendFeeReminder = asyncHandler(async (req, res) => {
 
     try {
         const { createNotification } = require('../utils/notification');
+        
+        // Fetch school details for logo image and branding
+        const school = await prisma.school.findUnique({
+            where: { id: req.user.schoolId },
+            select: { logo: true, name: true, phone: true, email: true }
+        });
+
+        // Fetch all fee masters applicable to this student
+        const feeMasters = await prisma.feeMaster.findMany({
+            where: { schoolId: req.user.schoolId },
+            include: {
+                FeeGroup: { select: { name: true } },
+                FeeType: { select: { name: true } }
+            }
+        });
+
+        // Fetch all payments made by this student
+        const payments = await prisma.feePayment.findMany({
+            where: { studentId: student.id }
+        });
+
+        // Determine applicable fee masters and check pending amounts
+        const pendingFees = [];
+        let totalDue = 0;
+
+        for (const master of feeMasters) {
+            let applies = false;
+            if (master.studentId) {
+                applies = master.studentId === student.id;
+            } else if (master.sectionId) {
+                applies = master.sectionId === student.sectionId;
+            } else if (master.classId) {
+                applies = master.classId === student.classId;
+            } else {
+                applies = true; // Global fee
+            }
+
+            if (applies) {
+                let expectedAmount = Number(master.amount);
+                
+                // Calculate fine if past due date
+                let calculatedFine = 0;
+                if (master.dueDate && new Date(master.dueDate) < new Date()) {
+                    if (master.fineType === 'Percentage') {
+                        calculatedFine = (expectedAmount * Number(master.percentage || 0)) / 100;
+                    } else if (master.fineType === 'FixAmount' || master.fineType === 'FixedAmount' || master.fineType === 'Fix') {
+                        calculatedFine = Number(master.fixAmount || 0);
+                    }
+                }
+                expectedAmount += calculatedFine;
+
+                // Sum payments for this specific group & type
+                const paidAmount = payments
+                    .filter(p => p.feeGroupId === master.feeGroupId && p.feeTypeId === master.feeTypeId)
+                    .reduce((sum, p) => sum + Number(p.netAmount), 0);
+
+                const remainingDue = expectedAmount - paidAmount;
+
+                if (remainingDue > 0) {
+                    totalDue += remainingDue;
+                    pendingFees.push({
+                        groupName: master.FeeGroup?.name || 'General',
+                        typeName: master.FeeType?.name || 'Fee',
+                        dueDate: master.dueDate ? new Date(master.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A',
+                        amount: expectedAmount,
+                        paid: paidAmount,
+                        due: remainingDue
+                    });
+                }
+            }
+        }
+
+        const emailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fffaf0; padding: 40px 20px; color: #1f2937;">
+                <div style="max-width: 650px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border: 1px solid #ffedd5;">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #d97706 0%, #ea580c 100%); padding: 32px; text-align: center; color: #ffffff;">
+                        ${school?.logo ? `<img src="${school.logo}" alt="${school.name} Logo" style="max-height: 60px; margin-bottom: 16px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" />` : ''}
+                        <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Reminder</div>
+                        <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.025em;">Fee Payment Reminder</h1>
+                        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 15px;">Dues Notice & Statement</p>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 32px;">
+                        <p style="font-size: 16px; line-height: 1.6; margin-top: 0; color: #374151;">
+                            Dear Parent/Guardian,
+                        </p>
+                        <p style="font-size: 15px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                            This is a friendly reminder regarding the pending fees for your ward, <strong>${student.firstName} ${student.lastName || ''}</strong>. Please find the detailed breakdown of the outstanding dues below:
+                        </p>
+
+                        <!-- Student Info -->
+                        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr>
+                                    <td style="color: #78350f; font-weight: 500;">Student Name:</td>
+                                    <td style="font-weight: 600; color: #451a03; text-align: right;">${student.firstName} ${student.lastName || ''}</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #78350f; font-weight: 500; padding-top: 6px;">Admission No:</td>
+                                    <td style="font-weight: 600; color: #451a03; text-align: right;">${student.admissionNo}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Pending Fees Table -->
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #b45309; font-weight: 700; letter-spacing: 0.05em;">Outstanding Dues</h3>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr style="background-color: #fffbeb; border-bottom: 1px solid #ffedd5;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #78350f;">Fee Type / Due Date</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #78350f;">Expected</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #78350f;">Paid</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #78350f;">Balance Due</th>
+                                </tr>
+                                ${pendingFees.length > 0 ? pendingFees.map(fee => `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #111827;">
+                                        <div style="font-weight: 600;">${fee.typeName}</div>
+                                        <div style="font-size: 11px; color: #b45309;">Due by: ${fee.dueDate}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #4b5563; font-weight: 500;">₹${fee.amount.toFixed(2)}</td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #16a34a; font-weight: 500;">₹${fee.paid.toFixed(2)}</td>
+                                    <td style="padding: 12px 16px; text-align: right; color: #dc2626; font-weight: 600;">₹${fee.due.toFixed(2)}</td>
+                                </tr>
+                                `).join('') : `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td colspan="4" style="padding: 16px; text-align: center; color: #6b7280;">No pending fee items found.</td>
+                                </tr>
+                                `}
+                                <tr style="background-color: #fffbeb; font-size: 16px; font-weight: 700; border-top: 2px solid #ffedd5;">
+                                    <td colspan="3" style="padding: 16px; color: #78350f;">Total Outstanding Amount</td>
+                                    <td style="padding: 16px; text-align: right; color: #dc2626;">₹${totalDue.toFixed(2)}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <p style="font-size: 14px; line-height: 1.6; color: #b45309; background-color: #fffbeb; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #d97706; margin-bottom: 24px;">
+                            <strong>Important Note:</strong> Please clear the dues at the earliest convenience. If you have already processed the payment, please disregard this automated reminder.
+                        </p>
+
+                        <!-- Admin Details -->
+                        <div style="background-color: #fffbeb; border-radius: 12px; padding: 16px; border: 1px solid #fef3c7; margin-bottom: 24px; font-size: 13px; color: #78350f;">
+                            <p style="margin: 0; font-weight: 600; color: #451a03; margin-bottom: 4px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Authorized Signatory / Admin</p>
+                            <p style="margin: 0;">Sent by: <strong>${req.user.firstName} ${req.user.lastName || ''}</strong> (${req.user.email})</p>
+                        </div>
+
+                        <!-- Footer Note -->
+                        <div style="text-align: center; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 24px;">
+                            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #374151;">${school?.name || req.user.schoolName || 'School Management'}</p>
+                            ${school?.phone || school?.email ? `
+                            <p style="margin: 0 0 12px 0; font-size: 12px; color: #6b7280;">
+                                ${school?.phone ? `📞 Phone: ${school.phone}` : ''} 
+                                ${school?.phone && school?.email ? ' | ' : ''} 
+                                ${school?.email ? `✉️ Email: ${school.email}` : ''}
+                            </p>
+                            ` : ''}
+                            <p style="margin: 0; font-size: 11px; color: #9ca3af;">&copy; ${new Date().getFullYear()} ${school?.name || req.user.schoolName || 'School Management System'}. All rights reserved.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
         await createNotification({
             title: type || "Fee Reminder",
             message: `Dear Parent/Guardian, this is a reminder regarding the pending fee for ${student.firstName} ${student.lastName || ''}.`,
-            type: "fee_reminder"
+            type: "fee_reminder",
+            targetEmail: student.email || undefined,
+            emailHtml
         });
         
         // Log the reminder

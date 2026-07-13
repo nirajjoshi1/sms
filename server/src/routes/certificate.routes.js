@@ -8,16 +8,6 @@ const { PERMISSIONS } = require('../config/permissions');
 router.use(verifyJWT);
 router.use(requireSchoolContext);
 
-// Certificate Template routes
-router.route('/templates')
-    .get(certificateController.getCertificateTemplates)
-    .post(requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), certificateController.createCertificateTemplate);
-
-router.route('/templates/:id')
-    .get(certificateController.getCertificateTemplateById)
-    .put(requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), certificateController.updateCertificateTemplate)
-    .delete(requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), certificateController.deleteCertificateTemplate);
-
 // ID Card Template routes
 router.route('/id-cards')
     .get(certificateController.getIdCardTemplates)
@@ -29,9 +19,9 @@ router.route('/id-cards/:id')
     .delete(requirePermission(PERMISSIONS.CERTIFICATES_GENERATE), certificateController.deleteIdCardTemplate);
 
 // Certificate Generation routes
-router.post('/generate', certificateController.generateCertificate);
-router.post('/generate-bulk', certificateController.generateBulkCertificates);
-router.post('/transfer-certificate', certificateController.generateTransferCertificate);
+router.route('/transfer-certificate')
+    .get(certificateController.getTransferCertificates)
+    .post(certificateController.generateTransferCertificate);
 
 // ID Card Generation routes
 router.post('/generate-student-id', certificateController.generateStudentIdCard);
