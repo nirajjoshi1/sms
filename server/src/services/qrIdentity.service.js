@@ -16,8 +16,8 @@ const getClientBaseUrl = () => {
 const buildVerificationUrl = (token) => `${getClientBaseUrl()}/verify/person/${token}`;
 
 const ensureQrIdentity = async ({ schoolId, personType, personId }) => {
-    let identity = await prisma.qrIdentity.findUnique({
-        where: { schoolId_personType_personId: { schoolId, personType, personId } }
+    let identity = await prisma.qrIdentity.findFirst({
+        where: { schoolId, personType, personId }
     });
 
     if (!identity) {
@@ -35,11 +35,17 @@ const ensureQrIdentity = async ({ schoolId, personType, personId }) => {
 };
 
 const rotateQrIdentity = async ({ schoolId, personType, personId }) => {
-    const identity = await prisma.qrIdentity.upsert({
-        where: { schoolId_personType_personId: { schoolId, personType, personId } },
-        create: { token: createToken(), schoolId, personType, personId },
-        update: { token: createToken(), isActive: true }
+    const existing = await prisma.qrIdentity.findFirst({
+        where: { schoolId, personType, personId }
     });
+    const identity = existing
+        ? await prisma.qrIdentity.update({
+            where: { id: existing.id },
+            data: { token: createToken(), isActive: true }
+        })
+        : await prisma.qrIdentity.create({
+            data: { token: createToken(), schoolId, personType, personId }
+        });
     return { ...identity, verificationUrl: buildVerificationUrl(identity.token) };
 };
 
