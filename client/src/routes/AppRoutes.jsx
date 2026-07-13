@@ -68,9 +68,7 @@ import AddExpense from '../pages/expenses/AddExpense';
 import SearchExpense from '../pages/expenses/SearchExpense';
 
 // Certificate imports
-import StudentCertificate from '../pages/certificates/StudentCertificate';
 import GenerateCertificate from '../pages/certificates/GenerateCertificate';
-import TransferCertificate from '../pages/certificates/TransferCertificate';
 import StudentIDCard from '../pages/certificates/StudentIDCard';
 import GenerateIDCard from '../pages/certificates/GenerateIDCard';
 import StaffIDCard from '../pages/certificates/StaffIDCard';
