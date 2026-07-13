@@ -248,3 +248,82 @@ exports.deleteDisableReason = asyncHandler(async (req, res) => {
     await prisma.disableReason.delete({ where: { id } });
     res.status(200).json(new ApiResponse(200, null, "Disable reason deleted successfully"));
 });
+
+// =====================================
+// Bulk Assignment Controllers
+// =====================================
+
+exports.assignStudentsToCategory = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { studentIds } = req.body;
+
+    if (!Array.isArray(studentIds)) {
+        throw new ApiError(400, "studentIds must be an array");
+    }
+
+    const categoryExists = await prisma.category.findUnique({ where: { id } });
+    if (!categoryExists) {
+        throw new ApiError(404, "Category not found");
+    }
+
+    await prisma.$transaction([
+        prisma.student.updateMany({
+            where: { categoryId: id, id: { notIn: studentIds }, schoolId: req.user.schoolId },
+            data: { categoryId: null }
+        }),
+        prisma.student.updateMany({
+            where: { id: { in: studentIds }, schoolId: req.user.schoolId },
+            data: { categoryId: id }
+        })
+    ]);
+
+    res.status(200).json(new ApiResponse(200, null, `${studentIds.length} students assigned to category successfully`));
+});
+
+exports.assignStudentsToHouse = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { studentIds } = req.body;
+
+    if (!Array.isArray(studentIds)) {
+        throw new ApiError(400, "studentIds must be an array");
+    }
+
+    const houseExists = await prisma.house.findUnique({ where: { id } });
+    if (!houseExists) {
+        throw new ApiError(404, "House not found");
+    }
+
+    await prisma.$transaction([
+        prisma.student.updateMany({
+            where: { houseId: id, id: { notIn: studentIds }, schoolId: req.user.schoolId },
+            data: { houseId: null }
+        }),
+        prisma.student.updateMany({
+            where: { id: { in: studentIds }, schoolId: req.user.schoolId },
+            data: { houseId: id }
+        })
+    ]);
+
+    res.status(200).json(new ApiResponse(200, null, `${studentIds.length} students assigned to house successfully`));
+});
+
+exports.assignHouseCaptains = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { captainId, viceCaptainId } = req.body;
+
+    const houseExists = await prisma.house.findUnique({ where: { id } });
+    if (!houseExists) {
+        throw new ApiError(404, "House not found");
+    }
+
+    const updateData = {};
+    if (captainId !== undefined) updateData.captainId = captainId || null;
+    if (viceCaptainId !== undefined) updateData.viceCaptainId = viceCaptainId || null;
+
+    const house = await prisma.house.update({
+        where: { id },
+        data: updateData
+    });
+
+    res.status(200).json(new ApiResponse(200, house, "House captains updated successfully"));
+});

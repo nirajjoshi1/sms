@@ -8,19 +8,23 @@ import {
   Plus,
   ArrowLeft,
   Camera,
-  X
+  X,
+  Loader2,
+  Download
 } from 'lucide-react';
 import { useAcademics } from '../../hooks/useAcademics';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomSelect from '../../components/ui/CustomSelect';
+import ImportStudentsModal from './ImportStudentsModal';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
 
 const StudentAdmission = () => {
   const { classes, sections } = useAcademics();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [houses, setHouses] = useState([]);
   const [photoFile, setPhotoFile] = useState(null);
@@ -205,8 +209,11 @@ const StudentAdmission = () => {
             <p className="text-[11px] text-muted-foreground">Fill in the details to enroll a new student.</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-3 py-1.5 bg-accent text-foreground rounded-lg text-[11px] font-bold hover:bg-accent/80 transition-all">
-          <Upload className="w-3.5 h-3.5" />
+        <button 
+          onClick={() => setIsImportModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors"
+        >
+          <Upload className="w-4 h-4" />
           Import Student
         </button>
       </div>
@@ -280,26 +287,48 @@ const StudentAdmission = () => {
                 <p className="text-[9px] text-muted-foreground mt-2 text-center">Required</p>
               </div>
 
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input
-                  label="First Name *"
-                  value={formData.firstName}
-                  onChange={(v) => setFormData({...formData, firstName: v})}
-                  required
-                  mode="alpha"
-                />
-                <Input
-                  label="Middle Name"
-                  value={formData.middleName}
-                  onChange={(v) => setFormData({...formData, middleName: v})}
-                  mode="alpha"
-                />
-                <Input
-                  label="Last Name"
-                  value={formData.lastName}
-                  onChange={(v) => setFormData({...formData, lastName: v})}
-                  mode="alpha"
-                />
+              <div className="flex-1 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    label="First Name *"
+                    value={formData.firstName}
+                    onChange={(v) => setFormData({...formData, firstName: v})}
+                    required
+                    mode="alpha"
+                  />
+                  <Input
+                    label="Middle Name"
+                    value={formData.middleName}
+                    onChange={(v) => setFormData({...formData, middleName: v})}
+                    mode="alpha"
+                  />
+                  <Input
+                    label="Last Name"
+                    value={formData.lastName}
+                    onChange={(v) => setFormData({...formData, lastName: v})}
+                    mode="alpha"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomDatePicker
+                    label="Date of Birth *"
+                    value={formData.dob}
+                    onChange={(v) => setFormData({...formData, dob: v})}
+                  />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Gender *</label>
+                    <CustomSelect
+                      value={formData.gender}
+                      onChange={(v) => setFormData({...formData, gender: v})}
+                      options={[
+                        { id: 'Male', label: 'Male' },
+                        { id: 'Female', label: 'Female' },
+                        { id: 'Other', label: 'Other' }
+                      ]}
+                      placeholder="Select Gender"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -336,26 +365,6 @@ const StudentAdmission = () => {
               </div>
 
 
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Gender *</label>
-                <CustomSelect
-                  value={formData.gender}
-                  onChange={(v) => setFormData({...formData, gender: v})}
-                  options={[
-                    { id: 'Male', label: 'Male' },
-                    { id: 'Female', label: 'Female' },
-                    { id: 'Other', label: 'Other' }
-                  ]}
-                  placeholder="Select Gender"
-                />
-              </div>
-
-              <CustomDatePicker
-                label="Date of Birth *"
-                value={formData.dob}
-                onChange={(v) => setFormData({...formData, dob: v})}
-              />
               <Input
                 label="Mobile Number"
                 value={formData.mobileNumber}
@@ -469,6 +478,12 @@ const StudentAdmission = () => {
           </button>
         </div>
       </form>
+
+      <ImportStudentsModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+        onSuccess={() => navigate('/students')}
+      />
     </div>
   );
 };

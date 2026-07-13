@@ -4,10 +4,12 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CacheProvider } from "./context/CacheContext";
 import { ConfirmProvider } from "./context/ConfirmContext";
+import { LoadingProvider } from "./context/LoadingContext";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { Toaster } from 'sonner';
 import FormKeyboardNavigation from './components/common/FormKeyboardNavigation';
+import GlobalLoader from './components/common/GlobalLoader';
 
 function App() {
   return (
@@ -17,9 +19,11 @@ function App() {
           <FormKeyboardNavigation />
           <CacheProvider>
             <AuthProvider>
-              <ConfirmProvider>
-                <AppRoutes />
-              <Toaster
+              <LoadingProvider>
+                <ConfirmProvider>
+                  <GlobalLoader />
+                  <AppRoutes />
+                <Toaster
               position="top-right"
               closeButton
               duration={3000}
@@ -55,8 +59,9 @@ function App() {
                   },
                 },
               }}
-            />
-              </ConfirmProvider>
+              />
+                </ConfirmProvider>
+              </LoadingProvider>
             </AuthProvider>
           </CacheProvider>
         </ThemeProvider>

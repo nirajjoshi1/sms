@@ -2,6 +2,8 @@ const { z } = require('zod');
 
 const admitStudent = {
     body: z.object({
+        admissionNo: z.string().optional().nullable(),
+        rollNumber: z.string().optional().nullable(),
         enrollNumber: z.string().optional().nullable(),
         firstName: z.string().min(1, "First name is required"),
         middleName: z.string().optional().nullable(),
@@ -29,6 +31,35 @@ const admitStudent = {
 
 const updateStudent = {
     body: admitStudent.body.partial()
+};
+
+const bulkAdmitStudents = {
+    body: z.object({
+        classId: z.string().uuid("Invalid Class ID"),
+        sectionId: z.string().uuid("Invalid Section ID"),
+        students: z.array(z.object({
+            admissionNo: z.string().optional().nullable(),
+            rollNumber: z.string().optional().nullable(),
+            enrollNumber: z.string().optional().nullable(),
+            firstName: z.string().min(1, "First name is required"),
+            middleName: z.string().optional().nullable(),
+            lastName: z.string().optional().nullable(),
+            gender: z.enum(['Male', 'Female', 'Other']).default('Other'),
+            dob: z.string().optional().nullable(),
+            mobileNumber: z.string().optional().nullable(),
+            email: z.string().email("Invalid email address").optional().nullable().or(z.literal('')),
+            admissionDate: z.string().optional().nullable(),
+            fatherName: z.string().optional().nullable(),
+            fatherPhone: z.string().optional().nullable(),
+            motherName: z.string().optional().nullable(),
+            motherPhone: z.string().optional().nullable(),
+            guardianIs: z.enum(['Father', 'Mother', 'Other']).default('Other'),
+            guardianName: z.string().optional().nullable(),
+            guardianRelation: z.string().optional().nullable(),
+            guardianPhone: z.string().optional().nullable(),
+            guardianAddress: z.string().optional().nullable()
+        })).min(1, "At least one student is required")
+    }).strict()
 };
 
 const createCategory = {
@@ -61,6 +92,7 @@ const bulkDeleteStudents = {
 module.exports = {
     admitStudent,
     updateStudent,
+    bulkAdmitStudents,
     createCategory,
     createHouse,
     createDisableReason,

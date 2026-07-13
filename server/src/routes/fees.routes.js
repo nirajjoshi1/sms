@@ -62,6 +62,7 @@ router.route('/reminders/:id')
     .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), feesController.deleteFeeReminder);
 
 // Fee collection routes
+router.post('/send-reminder', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.sendFeeReminder);
 router.post('/collect', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), validate(feesValidation.collectFee), feesController.collectFee);
 router.get('/payments', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.searchFeePayments);
 router.get('/due', authorizeRoles('ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'), feesController.getDueFees);

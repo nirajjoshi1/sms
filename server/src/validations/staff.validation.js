@@ -44,6 +44,9 @@ const generatePayroll = {
         month: z.string().min(1, "Month is required"),
         year: z.number().int().min(2000).max(2100),
         netSalary: z.number().nonnegative("Net salary must be non-negative"),
+        baseSalary: z.union([z.string(), z.number()]).optional().nullable(),
+        allowances: z.any().optional().nullable(),
+        deductions: z.any().optional().nullable(),
         status: z.enum(['Generated', 'Paid']).optional().default('Generated')
     }).strict()
 };

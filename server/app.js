@@ -126,14 +126,14 @@ const csrfProtection = (req, res, next) => {
         const contentType = req.headers['content-type'] || '';
         const requestedWith = req.headers['x-requested-with'] || '';
         
-        // Allow multipart/form-data for uploads, but strictly require x-requested-with header for CSRF
-        if (contentType.includes('multipart/form-data') && requestedWith !== 'XMLHttpRequest') {
-             return res.status(403).json({ success: false, message: 'CSRF token missing or incorrect headers for file upload.' });
+        // Strictly require x-requested-with header for CSRF
+        if (requestedWith !== 'XMLHttpRequest') {
+             return res.status(403).json({ success: false, message: 'CSRF token missing or incorrect headers.' });
         }
         
-        // For other endpoints, enforce application/json
-        if (!contentType.includes('application/json') && !contentType.includes('multipart/form-data')) {
-            return res.status(403).json({ success: false, message: 'Invalid Content-Type. CSRF protection requires application/json.' });
+        // For endpoints with a body (POST, PUT, PATCH), enforce application/json or multipart/form-data
+        if (req.method !== 'DELETE' && !contentType.includes('application/json') && !contentType.includes('multipart/form-data')) {
+            return res.status(403).json({ success: false, message: 'Invalid Content-Type. CSRF protection requires application/json or multipart/form-data.' });
         }
     }
     next();

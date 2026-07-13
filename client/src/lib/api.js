@@ -7,17 +7,39 @@ const api = axios.create({
   baseURL,
   withCredentials: true, // send cookies automatically
   headers: {
-    'X-Requested-With': 'XMLHttpRequest'
+    'X-Requested-With': 'XMLHttpRequest',
+    'Content-Type': 'application/json'
   }
 });
 
-// Automatically attach token from localStorage as fallback removed since we are using HttpOnly cookies.
+api.interceptors.request.use(
+  (config) => {
+    // Show global loader for mutations
+    if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+      window.dispatchEvent(new Event('mutation:start'));
+    }
+    return config;
+  },
+  (error) => {
+    window.dispatchEvent(new Event('mutation:end'));
+    return Promise.reject(error);
+  }
+);
 
 // Notify the auth provider when an established session expires. Authentication
 // endpoints manage their own 401 responses and must not trigger hard redirects.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (['post', 'put', 'patch', 'delete'].includes(response.config?.method?.toLowerCase())) {
+      window.dispatchEvent(new Event('mutation:end'));
+    }
+    return response;
+  },
   (error) => {
+    if (['post', 'put', 'patch', 'delete'].includes(error.config?.method?.toLowerCase())) {
+      window.dispatchEvent(new Event('mutation:end'));
+    }
+    
     if (error.response?.status === 401) {
       const requestUrl = error.config?.url || '';
       const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/me');

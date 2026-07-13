@@ -46,7 +46,7 @@ const DueFees = () => {
   const sendReminder = async (studentId) => {
     try {
       setSendingId(studentId);
-      await api.post('/fees/reminders', { studentId, type: 'Due Fee Reminder' });
+      await api.post('/fees/send-reminder', { studentId, type: 'Due Fee Reminder' });
       toast.success('Reminder sent successfully');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to send reminder'));

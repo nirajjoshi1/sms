@@ -53,8 +53,22 @@ export const ConfirmProvider = ({ children }) => {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-        <AlertDialogContent>
+      <AlertDialog open={isOpen} onOpenChange={(open) => {
+        if (!open) handleCancel();
+      }}>
+        <AlertDialogContent 
+          onInteractOutside={(e) => {
+            // Radix AlertDialog prevents this by default, but we can override it
+            e.preventDefault(); 
+            handleCancel();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleConfirm();
+            }
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>{options.title}</AlertDialogTitle>
             <AlertDialogDescription>{options.description}</AlertDialogDescription>

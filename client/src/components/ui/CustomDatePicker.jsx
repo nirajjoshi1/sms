@@ -103,8 +103,8 @@ const CustomDatePicker = ({ value, onChange, label, placeholder = "Select Date" 
   };
 
   return (
-    <div className="relative w-full" ref={containerRef}>
-      {label && <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1 mb-1.5 block">{label}</label>}
+    <div className="relative w-full space-y-1.5" ref={containerRef}>
+      {label && <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{label}</label>}
       <div className="relative">
         <button
           type="button"

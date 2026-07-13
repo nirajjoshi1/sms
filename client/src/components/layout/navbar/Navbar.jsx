@@ -92,7 +92,7 @@ const Navbar = ({
 
   const handleMarkAsRead = async (id) => {
     try {
-      await api.put(`/notifications/${id}/read`);
+      await api.put(`/notifications/${id}/read`, {});
       setNotifications(prev => 
         prev.map(n => n.id === id ? { ...n, isRead: true } : n)
       );
@@ -102,9 +102,10 @@ const Navbar = ({
     }
   };
 
-  const handleMarkAllAsRead = async () => {
+  const handleMarkAllAsRead = async (e) => {
+    e.stopPropagation();
     try {
-      await api.put('/notifications/read-all');
+      await api.put('/notifications/read-all', {});
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
@@ -125,9 +126,10 @@ const Navbar = ({
     }
   };
 
-  const handleClearAll = async () => {
+  const handleClearAll = async (e) => {
+    e.stopPropagation();
     try {
-      await api.delete('/notifications');
+      await api.delete('/notifications', { data: {} });
       setNotifications([]);
       setUnreadCount(0);
     } catch (err) {
@@ -240,7 +242,7 @@ const Navbar = ({
 
           {/* Notifications Popover */}
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 md:w-96 bg-card/95 border border-border rounded-2xl shadow-2xl z-[9999] p-4 animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+            <div className="absolute right-0 mt-3 w-80 md:w-96 bg-card border border-border/80 rounded-2xl shadow-2xl z-[9999] p-4 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-3">
                 <div>
                   <h3 className="text-sm font-black text-foreground tracking-tight">Notifications</h3>

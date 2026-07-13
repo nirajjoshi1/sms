@@ -198,6 +198,10 @@ model FeeMaster {
   FeeType    FeeType   @relation(fields: [feeTypeId], references: [id])
   classId    String?
   Class      Class?    @relation(fields: [classId], references: [id])
+  sectionId  String?
+  Section    Section?  @relation(fields: [sectionId], references: [id])
+  studentId  String?
+  Student    Student?  @relation(fields: [studentId], references: [id])
   schoolId   String?
   School     School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -253,9 +257,13 @@ model House {
   name        String
   description String?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  Student     Student[]
-  schoolId    String?
+  updatedAt     DateTime  @updatedAt
+  captainId     String?
+  viceCaptainId String?
+  Captain       Student?  @relation("HouseCaptain", fields: [captainId], references: [id])
+  ViceCaptain   Student?  @relation("HouseViceCaptain", fields: [viceCaptainId], references: [id])
+  Student       Student[] @relation("HouseMembers")
+  schoolId      String?
   School      School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
@@ -544,6 +552,7 @@ model Section {
   Homework          Homework[]
   ExamMark          ExamMark[]
   StudentHistory    StudentHistory[]
+  FeeMaster         FeeMaster[]
   schoolId          String?
   School            School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -633,14 +642,17 @@ model Student {
   isDisabled         Boolean              @default(false)
   disableReasonId    String?
   createdAt          DateTime             @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime             @updatedAt
   birthCertificate   String?
   OfflineBankPayment OfflineBankPayment[]
   FeePayment         FeePayment[]
+  FeeMaster          FeeMaster[]
   Category           Category?            @relation(fields: [categoryId], references: [id])
   Class              Class                @relation(fields: [classId], references: [id])
   DisableReason      DisableReason?       @relation(fields: [disableReasonId], references: [id])
-  House              House?               @relation(fields: [houseId], references: [id])
+  House              House?               @relation("HouseMembers", fields: [houseId], references: [id])
+  CaptainOfHouse     House[]              @relation("HouseCaptain")
+  ViceCaptainOfHouse House[]              @relation("HouseViceCaptain")
   Section            Section              @relation(fields: [sectionId], references: [id])
   TeacherRating      TeacherRating[]
   StudentAttendance  StudentAttendance[]

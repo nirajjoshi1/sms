@@ -66,10 +66,10 @@ const StudentEdit = () => {
         admissionNo: student.admissionNo || '',
         enrollNumber: student.enrollNumber || '',
         rollNumber: student.rollNumber || '',
-        classId: student.ClassId || '',
-        sectionId: student.SectionId || '',
-        categoryId: student.CategoryId || '',
-        houseId: student.HouseId || '',
+        classId: student.classId || '',
+        sectionId: student.sectionId || '',
+        categoryId: student.categoryId || '',
+        houseId: student.houseId || '',
         firstName: student.firstName || '',
         middleName: student.middleName || '',
         lastName: student.lastName || '',
@@ -229,10 +229,16 @@ const StudentEdit = () => {
                 <p className="text-[9px] text-muted-foreground mt-2 text-center">Max 5MB</p>
               </div>
 
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input label="Admission No *" value={formData.admissionNo} onChange={(v) => setFormData({...formData, admissionNo: v})} required />
-                <Input label="Roll Number" value={formData.rollNumber} onChange={(v) => setFormData({...formData, rollNumber: v})} placeholder="Auto-assigned" />
-                <Input label="Enroll Number" value={formData.enrollNumber} onChange={(v) => setFormData({...formData, enrollNumber: v})} />
+              <div className="flex-1 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="Admission No *" value={formData.admissionNo} onChange={(v) => setFormData({...formData, admissionNo: v})} required />
+                  <CustomDatePicker label="Admission Date" value={formData.admissionDate} onChange={(v) => setFormData({...formData, admissionDate: v})} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input label="First Name *" value={formData.firstName} onChange={(v) => setFormData({...formData, firstName: v})} required />
+                  <Input label="Middle Name" value={formData.middleName} onChange={(v) => setFormData({...formData, middleName: v})} />
+                  <Input label="Last Name" value={formData.lastName} onChange={(v) => setFormData({...formData, lastName: v})} />
+                </div>
               </div>
             </div>
 
@@ -254,9 +260,7 @@ const StudentEdit = () => {
                 <CustomSelect value={formData.houseId} onChange={(v) => setFormData({...formData, houseId: v})} options={houses.map(h => ({ id: h.id, label: h.name }))} placeholder="Select House" />
               </div>
 
-              <Input label="First Name *" value={formData.firstName} onChange={(v) => setFormData({...formData, firstName: v})} required />
-              <Input label="Middle Name" value={formData.middleName} onChange={(v) => setFormData({...formData, middleName: v})} />
-              <Input label="Last Name" value={formData.lastName} onChange={(v) => setFormData({...formData, lastName: v})} />
+
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Gender *</label>
@@ -266,7 +270,6 @@ const StudentEdit = () => {
               <CustomDatePicker label="Date of Birth *" value={formData.dob} onChange={(v) => setFormData({...formData, dob: v})} />
               <Input label="Mobile Number" type="tel" value={formData.mobileNumber} onChange={(v) => setFormData({...formData, mobileNumber: v})} />
               <Input label="Email" type="email" value={formData.email} onChange={(v) => setFormData({...formData, email: v})} />
-              <CustomDatePicker label="Admission Date" value={formData.admissionDate} onChange={(v) => setFormData({...formData, admissionDate: v})} />
             </div>
           </div>
         </div>

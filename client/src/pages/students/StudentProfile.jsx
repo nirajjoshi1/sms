@@ -20,6 +20,7 @@ import {
 import api from '../../lib/api';
 import { toast } from 'sonner';
 import { useConfirm } from '../../context/ConfirmContext';
+import DisableStudentModal from './DisableStudentModal';
 
 const StudentProfile = () => {
   const confirm = useConfirm();
@@ -29,6 +30,7 @@ const StudentProfile = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
 
   useEffect(() => {
     fetchStudent();
@@ -48,21 +50,24 @@ const StudentProfile = () => {
   };
 
   const handleToggleStatus = async () => {
-    const action = student.isDisabled ? 'enable' : 'disable';
-    if (!await confirm(`Are you sure you want to ${action} this student?`)) return;
+    if (student.isDisabled) {
+      if (!await confirm(`Are you sure you want to enable this student?`)) return;
 
-    try {
-      setActionLoading(true);
-      await api.patch(`/students/${id}/status`, {
-        isDisabled: !student.isDisabled,
-        disableReasonId: null
-      });
-      toast.success(`Student ${action}d successfully`);
-      fetchStudent();
-    } catch (error) {
-      toast.error(`Failed to ${action} student`);
-    } finally {
-      setActionLoading(false);
+      try {
+        setActionLoading(true);
+        await api.patch(`/students/${id}/status`, {
+          isDisabled: false,
+          disableReasonId: null
+        });
+        toast.success(`Student enabled successfully`);
+        fetchStudent();
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to update status');
+      } finally {
+        setActionLoading(false);
+      }
+    } else {
+      setIsDisableModalOpen(true);
     }
   };
 
@@ -259,6 +264,15 @@ const StudentProfile = () => {
           </div>
         </div>
       </div>
+
+      {student && (
+        <DisableStudentModal
+          isOpen={isDisableModalOpen}
+          onClose={() => setIsDisableModalOpen(false)}
+          student={student}
+          onSuccess={fetchStudent}
+        />
+      )}
     </div>
   );
 };

@@ -19,6 +19,8 @@ router.route('/categories/:id')
     .put(requirePermission(PERMISSIONS.SETTINGS_MANAGE), validate(studentValidation.createCategory), studentSetupController.updateCategory)
     .delete(requirePermission(PERMISSIONS.SETTINGS_MANAGE), studentSetupController.deleteCategory);
 
+router.put('/categories/:id/students', requirePermission(PERMISSIONS.SETTINGS_MANAGE), studentSetupController.assignStudentsToCategory);
+
 // House routes
 router.route('/houses')
     .get(studentSetupController.getHouses)
@@ -27,6 +29,9 @@ router.route('/houses')
 router.route('/houses/:id')
     .put(requirePermission(PERMISSIONS.SETTINGS_MANAGE), validate(studentValidation.createHouse), studentSetupController.updateHouse)
     .delete(requirePermission(PERMISSIONS.SETTINGS_MANAGE), studentSetupController.deleteHouse);
+
+router.put('/houses/:id/students', requirePermission(PERMISSIONS.SETTINGS_MANAGE), studentSetupController.assignStudentsToHouse);
+router.put('/houses/:id/captains', requirePermission(PERMISSIONS.SETTINGS_MANAGE), studentSetupController.assignHouseCaptains);
 
 // Disable Reason routes
 router.route('/disable-reasons')

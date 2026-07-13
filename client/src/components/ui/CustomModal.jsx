@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function CustomModal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) {
+export default function CustomModal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', overflow = 'overflow-y-auto' }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -34,7 +34,7 @@ export default function CustomModal({ isOpen, onClose, title, children, maxWidth
             <Plus className="w-4 h-4 rotate-45" />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1">
+        <div className={`${overflow} flex-1`}>
           {children}
         </div>
       </div>

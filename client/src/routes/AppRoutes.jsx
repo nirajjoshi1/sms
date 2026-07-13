@@ -12,6 +12,7 @@ import StudentProfile from '../pages/students/StudentProfile';
 import StudentAdmission from '../pages/students/StudentAdmission';
 import StudentEdit from '../pages/students/StudentEdit';
 import DisabledStudents from '../pages/students/DisabledStudents';
+import DisableReason from '../pages/students/DisableReason';
 import StaffList from '../pages/staff/StaffList';
 import StaffAdd from '../pages/staff/StaffAdd';
 import StaffEdit from '../pages/staff/StaffEdit';
@@ -50,9 +51,7 @@ import Designation from '../pages/hr/Designation';
 import CollectFees from '../pages/fees/CollectFees';
 import SearchFees from '../pages/fees/SearchFees';
 import DueFees from '../pages/fees/DueFees';
-import FeesMaster from '../pages/fees/FeesMaster';
-import FeesGroup from '../pages/fees/FeesGroup';
-import FeesType from '../pages/fees/FeesType';
+import FeeSetup from '../pages/fees/FeeSetup';
 import FeesDiscount from '../pages/fees/FeesDiscount';
 import FeesCarryForward from '../pages/fees/FeesCarryForward';
 import FeesReminder from '../pages/fees/FeesReminder';
@@ -160,6 +159,7 @@ const AppRoutes = () => {
           <Route path="students/admission" element={<StudentAdmission />} />
           <Route path="students/edit/:id" element={<StudentEdit />} />
           <Route path="students/disabled" element={<DisabledStudents />} />
+          <Route path="students/disable-reason" element={<DisableReason />} />
           <Route path="students/category" element={<Category />} />
           <Route path="students/house" element={<House />} />
         </Route>
@@ -203,9 +203,7 @@ const AppRoutes = () => {
           <Route path="fees/collect" element={<CollectFees />} />
           <Route path="fees/search" element={<SearchFees />} />
           <Route path="fees/due" element={<DueFees />} />
-          <Route path="fees/master" element={<FeesMaster />} />
-          <Route path="fees/group" element={<FeesGroup />} />
-          <Route path="fees/type" element={<FeesType />} />
+          <Route path="fees/setup" element={<FeeSetup />} />
           <Route path="fees/discount" element={<FeesDiscount />} />
           <Route path="fees/carry-forward" element={<FeesCarryForward />} />
           <Route path="fees/reminder" element={<FeesReminder />} />
